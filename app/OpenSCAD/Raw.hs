@@ -1,5 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
-module OpenSCAD.Raw where
+module OpenSCAD.Raw (Ast(..), render) where
 
 import Data.List (intercalate)
 

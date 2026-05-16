@@ -1,7 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NamedFieldPuns #-}
-module OpenSCAD.Model where
+module OpenSCAD.Model (Model(..), Facet(..), V3, render) where
 
 import OpenSCAD.Raw (Ast(..))
 import qualified OpenSCAD.Raw as Raw

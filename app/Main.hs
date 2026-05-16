@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NamedFieldPuns #-}
 module Main where
 
 import OpenSCAD.Model (Model(..), Facet(..), V3, render)
