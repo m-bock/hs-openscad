@@ -1,85 +1,46 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
 module Main where
 
-import Raw (Ast(..))
-import qualified Raw
-
-data Shape = Rectangle Double Double
-             -- | Circle Double Facet
-             -- | Polygon Int [Vector2d] [[Int]]
-             -- | Projection Bool Model3d
-             -- | Offset Double Join Shape
-           deriving Show
-
-data Solid -- Sphere Double --Facet
-           = Cube { size :: (Double, Double, Double) }
-           | Cylinder { height :: Double, radius1 :: Double, radius2 :: Double } -- Facet
-        --    | ObCylinder Double Double Double Facet
-        --    | Polyhedron Int [Vector3d] Sides
-        --    | MultMatrix TransMatrix Model3d
-        --    | LinearExtrude Double Double Vector2d Int Int Facet Model2d
-        --    | RotateExtrude Int Facet Model2d
-        --    | Surface FilePath Bool Int
-        --    | ToSolid Model2d
-           deriving Show
+import OpenSCAD.Model (Model(..), Solid(..), Facet(..), V3, render)
 
 
+pitch :: Double
+pitch = 9
 
-data Model v = Solid Solid
-            --  | Shape Shape
-            --  | Scale v (Model v)
-            --  | Resize v (Model v)
-            --  | Rotate v (Model v)
-            | Translate v (Model v)
-            --  | Mirror v (Model v)
-            --  | Color (Colour Double) (Model v)
-            --  | Transparent (AlphaColour Double) (Model v)
-            --  -- and combinations
-            | Union [Model v]
-            --  | Intersection [Model v]
-            --  | Minkowski [Model v]
-            --  | Hull [Model v]
-            --  | Difference (Model v) (Model v)
-            --  -- And oddball stuff control
-            --  | Import FilePath
-            --  | Var Facet [Model v]
-            --  deriving Show
+baseHeight :: Double
+baseHeight = 2.5
 
-class Vector v
+width :: Double
+width = 17
+
+diameter :: Double
+diameter = 3
+
+clearance :: Double
+clearance = 0.2
+
+s1 :: Model V3
+s1 = Union
+  [ Translate (- (width / 2), 0, 0) $ Solid (Cube { size = (width, pitch, baseHeight) })
+  , Translate (0, pitch - r, 0)
+     $ Solid (Cylinder { height = 10, radius1 = r, radius2 = r, facet = NumFacets 30 })
+  ]
   where
-    toVec :: v -> [Double]
+    r = (diameter / 2) - clearance
 
-instance Vector (Double, Double, Double) where
-  toVec (x, y, z) = [x, y, z]
+s2 :: Model V3
+s2 = Union $ fmap (\i -> Translate (0, i * pitch, 0) s1) [0..5]
 
-instance Vector (Double, Double) where
-  toVec (x, y) = [x, y]
 
-renderVec :: Vector v => v -> Raw.Ast
-renderVec v = Vec (fmap LitDouble (toVec v))
 
-render :: Vector v => Model v -> Raw.Ast
-render = \case
-  --Shape2d shape2d -> rShape2d shape2d
-  Solid solid       -> rSolid solid
-  Union models      -> App "union" [] (fmap render models)
-  Translate v model -> App "translate" [(Just "v", renderVec v)] [render model]
-  where
-    rSolid :: Solid -> Raw.Ast
-    rSolid = \case
-      Cube { size = (x, y, z) } -> App "cube"
-                              [(Just "size", Vec [LitDouble x, LitDouble y, LitDouble z])]
-                              []
-      Cylinder h r1 r2 -> App "cylinder"
-                              [(Just "h", LitDouble h), (Just "r1", LitDouble r1), (Just "r2", LitDouble r2)]
-                              []
-
-xx :: Model (Double, Double, Double)
-xx = Union $ fmap (\i -> Translate (0, i * 90, 0) (Solid (Cylinder 70 25 25))) [0..4]
-
-sketch :: Model (Double, Double, Double)
-sketch = Union [xx, Solid (Cube { size = (170, 700, 10) })]
+sketch :: Model V3
+sketch = Union
+ [ Translate (-40, 0, 0) s2
+ , Translate (40, 0, 0) s2
+ , Translate (0, 0, 0) s2
+ ]
 
 main :: IO ()
-main = writeFile "tmp/out.scad" (Raw.render (render sketch))
+main = writeFile "/home/m/Desktop/scad/lustre.scad" (render sketch)
