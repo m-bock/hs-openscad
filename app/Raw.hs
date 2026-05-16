@@ -3,18 +3,24 @@ module Raw where
 
 import Data.List (intercalate)
 
-data Ast = App String [Ast] [Ast]
+data Ast = App String [(Maybe String, Ast)] [Ast]
          | Id String
-         | Vec3 Ast Ast Ast
+         | Vec [Ast]
          | LitDouble Double
 
 render :: Ast -> String
 render = \case
   App name args1 args2 -> 
-    "{" ++ name ++ "(" ++ renderArgsWith "," args1 ++ ")" ++ renderArgsWith "" args2 ++ ";}"
+    "{" ++ name ++ "(" ++ renderArgs1 args1 ++ ")" ++ renderArgs2 args2 ++ ";}"
   Id name -> name
-  Vec3 x y z -> "[" ++ render x ++ "," ++ render y ++ "," ++ render z ++ "]"
+  Vec vs -> "[" ++ intercalate "," (map render vs) ++ "]"
   LitDouble x -> show x
 
-renderArgsWith :: String -> [Ast] -> String
-renderArgsWith sep = intercalate sep . map render
+renderArgs1 :: [(Maybe String, Ast)] -> String
+renderArgs1 args = intercalate "," $ map (\(name, arg) -> case name of
+    Just name -> name ++ "=" ++ render arg
+    Nothing -> render arg
+  ) args
+
+renderArgs2 :: [Ast] -> String
+renderArgs2 args = intercalate "" $ map render args
