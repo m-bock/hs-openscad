@@ -13,6 +13,7 @@ common warnings
 
 common extensions
   default-extensions:
+    DuplicateRecordFields
     FlexibleInstances
     LambdaCase
     NamedFieldPuns
@@ -21,7 +22,7 @@ common extensions
 
 library
   import: warnings, extensions
-  exposed-modules: OpenSCAD.Model3D
+  exposed-modules: OpenSCAD.Model
   other-modules:
     OpenSCAD.Raw
 

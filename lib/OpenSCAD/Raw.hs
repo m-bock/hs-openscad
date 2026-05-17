@@ -7,23 +7,26 @@ data Ast = App String [(Maybe String, Ast)] [Ast]
          | Vec [Ast]
          | LitDouble Double
          | LitInt Int
+         | LitBool Bool
 
 render :: Ast -> String
 render = \case
-  App name args1 args2 -> 
+  App name args1 args2 ->
     "{" ++ name ++ "(" ++ renderArgs1 args1 ++ ")" ++ renderArgs2 args2 ++ ";}"
-  
+
   Id name ->
     name
-  
+
   Vec vs ->
     "[" ++ intercalate "," (map render vs) ++ "]"
-  
+
   LitDouble x ->
     show x
-  
+
   LitInt x ->
     show x
+
+  LitBool x -> if x then "true" else "false"
 
 renderArgs1 :: [(Maybe String, Ast)] -> String
 renderArgs1 args = intercalate "," $ map (\(name, arg) -> case name of
