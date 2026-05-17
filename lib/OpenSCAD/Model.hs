@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Redundant bracket" #-}
 {-# HLINT ignore "Use :" #-}
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# HLINT ignore "Use ++" #-}
 {-# HLINT ignore "Evaluate" #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
+{-# HLINT ignore "Eta reduce" #-}
 
 module OpenSCAD.Model (Model3D(..), Model2D(..), Facets(..), V3, V2, RGB, render) where
 
 import OpenSCAD.Raw (Ast(..))
 import qualified OpenSCAD.Raw as Raw
-import Data.Maybe (catMaybes)
 
 data Facets = Facets {
   fa :: Maybe Double,
@@ -29,9 +29,9 @@ type RGB = V3 Double
 data Model2D
   = Primitive2D Primitive2D
   | Transform2D Transform2D  [Model2D]
-  | Pojection2D Projection2D [Model3D]
+  | Projection2D Projection2D [Model3D]
 
-data Projection2D = Projection2D { cut :: Maybe Bool }
+data Projection2D = RegularProjection2D { cut :: Maybe Bool }
 
 data Primitive2D
   = Circle2D  { d :: Double, _facets :: Maybe Facets }
@@ -40,7 +40,7 @@ data Primitive2D
 
 data Transform2D
   = Scale2D        { v :: V2 Double }
-  | Resize2D       { v :: V2 Double, auto :: Maybe (V2 Bool) } -- !
+  | Resize2D       { v :: V2 Double, auto :: Maybe (V2 Bool) }
   | RotateEuler2D  { v :: V2 Double }
   | RotateAxis2D   { a :: Double }
   | Translate2D    { v :: V2 Double }
@@ -67,7 +67,7 @@ data Model3D
 data Extrude3D
   = LinearExtrude
       { height    :: Double
-      , centerP    :: Maybe Bool
+      , center    :: Maybe Bool
       , twist     :: Maybe Double
       , scale     :: Maybe Double
       , slices    :: Maybe Int
@@ -157,14 +157,14 @@ toRawModel2D = \case
          )
          (map toRawModel2D children)
   Transform2D (RotateEuler2D { v }) children
-    -> App "rotate_euler"
+    -> App "rotate"
          (concat
            [ required (Just "v", toRawVec2Double v)
            ]
          )
          (map toRawModel2D children)
   Transform2D (RotateAxis2D { a }) children
-    -> App "rotate_axis"
+    -> App "rotate"
          (concat
            [ required (Just "a", LitDouble a)
            ]
@@ -193,14 +193,14 @@ toRawModel2D = \case
          )
          (map toRawModel2D children)
   Transform2D (OffsetRadial2D { r }) children
-    -> App "offset_radial"
+    -> App "offset"
          (concat
            [ required (Just "r", LitDouble r)
            ]
          )
          (map toRawModel2D children)
   Transform2D (OffsetDelta2D { delta, chamfer }) children
-    -> App "offset_delta"
+    -> App "offset"
          (concat
            [ required (Just "delta", LitDouble delta)
            , optional (\c -> (Just "chamfer", LitBool c)) chamfer
@@ -231,6 +231,13 @@ toRawModel2D = \case
     -> App "difference"
          []
          (map toRawModel2D children)
+  Projection2D (RegularProjection2D { cut }) children
+    -> App "projection"
+         (concat
+           [ optional (\c -> (Just "cut", LitBool c)) cut
+           ]
+         )
+         (map toRawModel3D children)
 
 
 toRawModel3D :: Model3D -> Raw.Ast
@@ -341,6 +348,29 @@ toRawModel3D = \case
     -> App "hull"
          []
          (map toRawModel3D children)
+  Extrude3D (LinearExtrude { height, center, twist, scale, slices, segments, convexity }) children
+    -> App "linear_extrude"
+         (concat
+           [ required (Just "height", LitDouble height)
+           , optional (\c -> (Just "center", LitBool c)) center
+           , optional (\t -> (Just "twist", LitDouble t)) twist
+           , optional (\s -> (Just "scale", LitDouble s)) scale
+           , optional (\s -> (Just "slices", LitInt s)) slices
+           , optional (\s -> (Just "segments", LitInt s)) segments
+           , optional (\c -> (Just "convexity", LitInt c)) convexity
+           ]
+         )
+         (map toRawModel2D children)
+  Extrude3D (RotateExtrude { angle, start, convexity, _facets }) children
+    -> App "rotate_extrude"
+         (concat
+           [ required (Just "angle", LitDouble angle)
+           , required (Just "start", LitDouble start)
+           , optional (\c -> (Just "convexity", LitInt c)) convexity
+           , optionals toRawFacets _facets
+           ]
+         )
+         (map toRawModel2D children)
 
 toRawFacets :: Facets -> [ (Maybe String, Raw.Ast) ]
 toRawFacets Facets { fa, fs, fn } =
@@ -348,13 +378,11 @@ toRawFacets Facets { fa, fs, fn } =
     (maybe [] (\s -> [(Just "$fs", LitDouble s)]) fs) ++
     (maybe [] (\n -> [(Just "$fn", LitInt n)   ]) fn)
 
-
 toRawVec3Double :: V3 Double -> Raw.Ast
 toRawVec3Double (x, y, z) = Vec [LitDouble x, LitDouble y, LitDouble z]
 
 toRawVec2Double :: V2 Double -> Raw.Ast
 toRawVec2Double (x, y) = Vec [LitDouble x, LitDouble y]
-
 
 -------------------------------------------------------------------------------
 --- Render
