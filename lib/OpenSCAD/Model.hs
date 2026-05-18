@@ -6,7 +6,7 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 {-# HLINT ignore "Eta reduce" #-}
 
-module OpenSCAD.Model (Model3D(..), Model2D(..), Facets(..), V3, V2, RGB, render3D, render2D) where
+module OpenSCAD.Model (Model3D(..), Model2D(..), Primitive2D(..), Transform2D(..), Projection2D(..), Extrude3D(..), Facets(..), V3, V2, RGB, render3D, render2D) where
 
 import OpenSCAD.Raw (Ast(..))
 import qualified OpenSCAD.Raw as Raw
