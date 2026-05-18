@@ -1,4 +1,4 @@
-module OpenSCAD.Raw (Ast(..), render, renderMany) where
+module OpenSCAD.Raw (Ast(..), render) where
 
 import Data.List (intercalate)
 
