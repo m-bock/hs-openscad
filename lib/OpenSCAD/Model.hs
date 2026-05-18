@@ -6,7 +6,18 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 {-# HLINT ignore "Eta reduce" #-}
 
-module OpenSCAD.Model (Model3D(..), Model2D(..), Primitive2D(..), Transform2D(..), Projection2D(..), Extrude3D(..), Facets(..), V3, V2, RGB, render3D, render2D) where
+module OpenSCAD.Model
+  ( Model3D(..)
+  , Model2D(..)
+  , Primitive2D(..)
+  , Transform2D(..)
+  , Projection2D(..)
+  , Extrude3D(..)
+  , Facets(..)
+  , V3
+  , V2
+  , RGB
+  , render3D, renderMany3D, render2D, renderMany2D) where
 
 import OpenSCAD.Raw (Ast(..))
 import qualified OpenSCAD.Raw as Raw
@@ -392,5 +403,11 @@ toRawVec2Double (x, y) = Vec [LitDouble x, LitDouble y]
 render3D :: Model3D -> String
 render3D = Raw.render . toRawModel3D
 
+renderMany3D :: [Model3D] -> String
+renderMany3D = Raw.renderMany . map toRawModel3D
+
 render2D :: Model2D -> String
 render2D = Raw.render . toRawModel2D
+
+renderMany2D :: [Model2D] -> String
+renderMany2D = Raw.renderMany . map toRawModel2D

@@ -1,4 +1,4 @@
-module OpenSCAD.Raw (Ast(..), render) where
+module OpenSCAD.Raw (Ast(..), render, renderMany) where
 
 import Data.List (intercalate)
 
@@ -12,7 +12,7 @@ data Ast = App String [(Maybe String, Ast)] [Ast]
 render :: Ast -> String
 render = \case
   App name args1 args2 ->
-    "{" ++ name ++ "(" ++ renderArgs1 args1 ++ ")" ++ renderArgs2 args2 ++ ";}"
+    "{" ++ name ++ "(" ++ renderArgs1 args1 ++ ")" ++ renderMany args2 ++ ";}"
 
   Id name ->
     name
@@ -34,5 +34,5 @@ renderArgs1 args = intercalate "," $ map (\(name, arg) -> case name of
     Nothing -> render arg
   ) args
 
-renderArgs2 :: [Ast] -> String
-renderArgs2 args = intercalate "" $ map render args
+renderMany :: [Ast] -> String
+renderMany xs = intercalate "" $ map render xs
