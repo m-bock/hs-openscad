@@ -6,7 +6,7 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 {-# HLINT ignore "Eta reduce" #-}
 
-module OpenSCAD.Model (Model3D(..), Model2D(..), Facets(..), V3, V2, RGB, render) where
+module OpenSCAD.Model (Model3D(..), Model2D(..), Facets(..), V3, V2, RGB, render3D, render2D) where
 
 import OpenSCAD.Raw (Ast(..))
 import qualified OpenSCAD.Raw as Raw
@@ -42,7 +42,7 @@ data Transform2D
   = Scale2D        { v :: V2 Double }
   | Resize2D       { v :: V2 Double, auto :: Maybe (V2 Bool) }
   | RotateEuler2D  { v :: V2 Double }
-  | RotateAxis2D   { a :: Double }
+  | RotateAxis2D   { a :: Double, v :: V2 Double }
   | Translate2D    { v :: V2 Double }
   | Mirror2D       { v :: V2 Double }
   | Color2D        { c :: RGB, alpha :: Maybe Double }
@@ -163,10 +163,11 @@ toRawModel2D = \case
            ]
          )
          (map toRawModel2D children)
-  Transform2D (RotateAxis2D { a }) children
+  Transform2D (RotateAxis2D { a, v }) children
     -> App "rotate"
          (concat
            [ required (Just "a", LitDouble a)
+           , required (Just "v", toRawVec2Double v)
            ]
          )
          (map toRawModel2D children)
@@ -388,5 +389,8 @@ toRawVec2Double (x, y) = Vec [LitDouble x, LitDouble y]
 --- Render
 -------------------------------------------------------------------------------
 
-render :: Model3D -> String
-render = Raw.render . toRawModel3D
+render3D :: Model3D -> String
+render3D = Raw.render . toRawModel3D
+
+render2D :: Model2D -> String
+render2D = Raw.render . toRawModel2D
