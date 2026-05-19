@@ -1,11 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Redundant bracket" #-}
-{-# HLINT ignore "Use :" #-}
-{-# HLINT ignore "Use ++" #-}
-{-# HLINT ignore "Evaluate" #-}
-{-# HLINT ignore "Use newtype instead of data" #-}
-{-# HLINT ignore "Eta reduce" #-}
-
 module OpenSCAD.Model
   ( Model3D(..)
   , Model2D(..)
@@ -23,6 +15,11 @@ module OpenSCAD.Model
 
 import OpenSCAD.Raw (Ast(..))
 import qualified OpenSCAD.Raw as Raw
+import Data.Monoid (First(..))
+
+-------------------------------------------------------------------------------
+--- Types
+-------------------------------------------------------------------------------
 
 data Facets = Facets {
   fa :: Maybe Double,
@@ -30,6 +27,16 @@ data Facets = Facets {
   fn :: Maybe Int
 }
   deriving Show
+
+instance Semigroup Facets where
+  (Facets fa fs fn) <> (Facets fa' fs' fn') = Facets {
+    fa = getFirst (First fa <> First fa'),
+    fs = getFirst (First fs <> First fs'),
+    fn = getFirst (First fn <> First fn')
+  }
+
+instance Monoid Facets where
+  mempty = Facets Nothing Nothing Nothing
 
 type V3 a = (a, a, a)
 type V2 a = (a, a)
@@ -95,10 +102,24 @@ data Extrude3D
       }
 
 data Primitive3D
-  = Cube3D       { size :: V3 Double }
-  | Cylinder3D   { h :: Double, d1 :: Double, d2 :: Double, _facets :: Maybe Facets }
-  | Sphere3D     { d :: Double, _facets :: Maybe Facets }
-  | Polyhedron3D { points :: [V3 Double], faces :: Maybe [[Int]], convexity :: Maybe Int }
+  = Cube3D
+      { size :: V3 Double
+      }
+  | Cylinder3D
+      { h :: Double
+      , d1 :: Double
+      , d2 :: Double
+      , _facets :: Maybe Facets
+      }
+  | Sphere3D
+      { d :: Double
+      , _facets :: Maybe Facets
+      }
+  | Polyhedron3D
+      { points :: [V3 Double]
+      , faces :: Maybe [[Int]]
+      , convexity :: Maybe Int
+      }
 
 data Transform3D
   = Scale3D        { v :: V3 Double }

@@ -1,0 +1,6 @@
+- ignore: {name: Redundant bracket, within: OpenSCAD.Model}
+- ignore: {name: "Use :", within: OpenSCAD.Model}
+- ignore: {name: "Use ++", within: OpenSCAD.Model}
+- ignore: {name: Evaluate, within: OpenSCAD.Model}
+- ignore: {name: Use newtype instead of data, within: OpenSCAD.Model}
+- ignore: {name: Eta reduce, within: OpenSCAD.Model}
