@@ -28,7 +28,7 @@ renderAt depth (App name args children) =
 renderLit :: Lit -> String
 renderLit = \case
   LitVec vs ->
-    "[" ++ intercalate "," (map renderLit vs) ++ "]"
+    "[" ++ intercalate ", " (map renderLit vs) ++ "]"
   LitDouble x ->
     show x
   LitInt x ->
