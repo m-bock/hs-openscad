@@ -49,9 +49,10 @@ type Comment = String
 -------------------------------------------------------------------------------
 
 data Model2D
-  = Primitive2D  (Maybe Comment) Primitive2D
-  | Transform2D  (Maybe Comment) Transform2D  [Model2D]
-  | Projection2D (Maybe Comment) Projection2D [Model3D]
+  = Primitive2D  Primitive2D
+  | Transform2D  Transform2D  [Model2D]
+  | Projection2D Projection2D [Model3D]
+  | Comment2D Comment Model2D
 
 data Projection2D = RegularProjection2D { cut :: Maybe Bool }
 
@@ -82,9 +83,10 @@ data Transform2D
 -------------------------------------------------------------------------------
 
 data Model3D
-  = Primitive3D (Maybe Comment) Primitive3D
-  | Transform3D (Maybe Comment) Transform3D [Model3D]
-  | Extrude3D   (Maybe Comment) Extrude3D   [Model2D]
+  = Primitive3D Primitive3D
+  | Transform3D Transform3D [Model3D]
+  | Extrude3D   Extrude3D   [Model2D]
+  | Comment3D Comment Model3D
 
 data Extrude3D
   = LinearExtrude
@@ -152,24 +154,25 @@ required x = [x]
 
 toRawModel2D :: Model2D -> Raw.Ast
 toRawModel2D = \case
-  Primitive2D comment (Circle2D { d, _facets })
-    -> App comment "circle"
+  Comment2D comment ast -> Comment comment (toRawModel2D ast)
+  Primitive2D (Circle2D { d, _facets })
+    -> App "circle"
          (concat
            [ required (Just "d", LitDouble d)
            , optionals toRawFacets _facets
            ]
          )
          []
-  Primitive2D comment (Square2D { size, center })
-    -> App comment "square"
+  Primitive2D (Square2D { size, center })
+    -> App "square"
          (concat
            [ required (Just "size", toRawVec2Double size)
            , optional (\c -> (Just "center", LitBool c)) center
            ]
          )
          []
-  Primitive2D comment (Polygon2D { points, paths, convexity })
-    -> App comment "polygon"
+  Primitive2D (Polygon2D { points, paths, convexity })
+    -> App "polygon"
          (concat
            [ required (Just "points", LitVec $ map toRawVec2Double points)
            , optional (\p -> (Just "paths", LitVec $ map (LitVec . map LitInt) p)) paths
@@ -177,100 +180,100 @@ toRawModel2D = \case
            ]
          )
          []
-  Transform2D comment (Scale2D { v2 }) children
-    -> App comment "scale"
+  Transform2D (Scale2D { v2 }) children
+    -> App "scale"
          (concat
            [ required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (Resize2D { newSize, auto }) children
-    -> App comment "resize"
+  Transform2D (Resize2D { newSize, auto }) children
+    -> App "resize"
          (concat
            [ required (Just "newsize", toRawVec2Double newSize)
            , optional (\(a1, a2) -> (Just "auto", LitVec [LitBool a1, LitBool a2])) auto
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (RotateEuler2D { v2 }) children
-    -> App comment "rotate"
+  Transform2D (RotateEuler2D { v2 }) children
+    -> App "rotate"
          (concat
            [ required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (RotateAxis2D { a, mv2 }) children
-    -> App comment "rotate"
+  Transform2D (RotateAxis2D { a, mv2 }) children
+    -> App "rotate"
          (concat
            [ required (Just "a", LitDouble a)
            , optional (\v -> (Just "v", toRawVec2Double v)) mv2
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (Translate2D { v3 }) children
-    -> App comment "translate"
+  Transform2D (Translate2D { v3 }) children
+    -> App "translate"
          (concat
            [ required (Just "v", toRawVec3Double v3)
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (Mirror2D { v2 }) children
-    -> App comment "mirror"
+  Transform2D (Mirror2D { v2 }) children
+    -> App "mirror"
          (concat
            [ required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (Color2D { c, alpha }) children
-    -> App comment "color"
+  Transform2D (Color2D { c, alpha }) children
+    -> App "color"
          (concat
            [ optional (\co -> (Just "c", toRawVec3Double co)) c
            , optional (\a -> (Just "alpha", LitDouble a)) alpha
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (OffsetRadial2D { r, _facets }) children
-    -> App comment "offset"
+  Transform2D (OffsetRadial2D { r, _facets }) children
+    -> App "offset"
          (concat
            [ required (Just "r", LitDouble r)
            , optionals toRawFacets _facets
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (OffsetDelta2D { delta, chamfer }) children
-    -> App comment "offset"
+  Transform2D (OffsetDelta2D { delta, chamfer }) children
+    -> App "offset"
          (concat
            [ required (Just "delta", LitDouble delta)
            , optional (\c -> (Just "chamfer", LitBool c)) chamfer
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (Fill2D) children
-    -> App comment "fill"
+  Transform2D (Fill2D) children
+    -> App "fill"
          []
          (map toRawModel2D children)
-  Transform2D comment (Minkowski2D) children
-    -> App comment "minkowski"
+  Transform2D (Minkowski2D) children
+    -> App "minkowski"
          []
          (map toRawModel2D children)
-  Transform2D comment (Hull2D) children
-    -> App comment "hull"
+  Transform2D (Hull2D) children
+    -> App "hull"
          []
          (map toRawModel2D children)
-  Transform2D comment (Union2D) children
-    -> App comment "union"
+  Transform2D (Union2D) children
+    -> App "union"
          []
          (map toRawModel2D children)
-  Transform2D comment (Intersection2D) children
-    -> App comment "intersection"
+  Transform2D (Intersection2D) children
+    -> App "intersection"
          []
          (map toRawModel2D children)
-  Transform2D comment (Difference2D) children
-    -> App comment "difference"
+  Transform2D (Difference2D) children
+    -> App "difference"
          []
          (map toRawModel2D children)
-  Projection2D comment (RegularProjection2D { cut }) children
-    -> App comment "projection"
+  Projection2D (RegularProjection2D { cut }) children
+    -> App "projection"
          (concat
            [ optional (\c -> (Just "cut", LitBool c)) cut
            ]
@@ -280,15 +283,15 @@ toRawModel2D = \case
 
 toRawModel3D :: Model3D -> Raw.Ast
 toRawModel3D = \case
-  Primitive3D comment (Cube3D { size })
-    -> App comment "cube"
+  Primitive3D (Cube3D { size })
+    -> App "cube"
          (concat
            [ required (Just "size", toRawVec3Double size)
            ]
          )
          []
-  Primitive3D comment (Cylinder3D { h, d1, d2, _facets })
-    -> App comment "cylinder"
+  Primitive3D (Cylinder3D { h, d1, d2, _facets })
+    -> App "cylinder"
          (concat
            [ required (Just "h", LitDouble h)
            , required (Just "d1", LitDouble d1)
@@ -297,16 +300,16 @@ toRawModel3D = \case
            ]
          )
          []
-  Primitive3D comment (Sphere3D { d, _facets })
-    -> App comment "sphere"
+  Primitive3D (Sphere3D { d, _facets })
+    -> App "sphere"
          (concat
            [ required (Just "d", LitDouble d)
            , optionals toRawFacets _facets
            ]
          )
          []
-  Primitive3D comment (Polyhedron3D { points, faces, convexity })
-    -> App comment "polyhedron"
+  Primitive3D (Polyhedron3D { points, faces, convexity })
+    -> App "polyhedron"
          (concat
            [ required (Just "points", LitVec $ map toRawVec3Double points)
            , optional (\f -> (Just "faces", LitVec $ map (LitVec . map LitInt) f)) faces
@@ -314,80 +317,80 @@ toRawModel3D = \case
            ]
          )
          []
-  Transform3D comment (Scale3D { v }) children
-    -> App comment "scale"
+  Transform3D (Scale3D { v }) children
+    -> App "scale"
          (concat
            [ required (Just "v", toRawVec3Double v)
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (Resize3D { newSize, auto }) children
-    -> App comment "resize"
+  Transform3D (Resize3D { newSize, auto }) children
+    -> App "resize"
          (concat
            [ required (Just "newsize", toRawVec3Double newSize)
            , optional (\(a1, a2, a3) -> (Just "auto", LitVec [LitBool a1, LitBool a2, LitBool a3])) auto
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (RotateEuler3D { v }) children
-    -> App comment "rotate"
+  Transform3D (RotateEuler3D { v }) children
+    -> App "rotate"
          (concat
            [ required (Just "v", toRawVec3Double v)
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (RotateAxis3D { a, v }) children
-    -> App comment "rotate"
+  Transform3D (RotateAxis3D { a, v }) children
+    -> App "rotate"
          (concat
            [ required (Just "a", LitDouble a)
            , required (Just "v", toRawVec3Double v)
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (Translate3D { v }) children
-    -> App comment "translate"
+  Transform3D (Translate3D { v }) children
+    -> App "translate"
          (concat
            [ required (Just "v", toRawVec3Double v)
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (Mirror3D { v }) children
-    -> App comment "mirror"
+  Transform3D (Mirror3D { v }) children
+    -> App "mirror"
          (concat
            [ required (Just "v", toRawVec3Double v)
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (Color3D { c, alpha }) children
-    -> App comment "color"
+  Transform3D (Color3D { c, alpha }) children
+    -> App "color"
          (concat
            [ optional (\co -> (Just "c", toRawVec3Double co)) c
            , optional (\a -> (Just "alpha", LitDouble a)) alpha
            ]
          )
          (map toRawModel3D children)
-  Transform3D comment (Union3D) children
-    -> App comment "union"
+  Transform3D (Union3D) children
+    -> App "union"
          []
          (map toRawModel3D children)
-  Transform3D comment (Intersection3D) children
-    -> App comment "intersection"
+  Transform3D (Intersection3D) children
+    -> App "intersection"
          []
          (map toRawModel3D children)
-  Transform3D comment (Difference3D) children
-    -> App comment "difference"
+  Transform3D (Difference3D) children
+    -> App "difference"
          []
          (map toRawModel3D children)
-  Transform3D comment (Minkowski3D) children
-    -> App comment "minkowski"
+  Transform3D (Minkowski3D) children
+    -> App "minkowski"
          []
          (map toRawModel3D children)
-  Transform3D comment (Hull3D) children
-    -> App comment "hull"
+  Transform3D (Hull3D) children
+    -> App "hull"
          []
          (map toRawModel3D children)
-  Extrude3D comment (LinearExtrude { height, center, twist, scale, slices, segments, convexity }) children
-    -> App comment "linear_extrude"
+  Extrude3D (LinearExtrude { height, center, twist, scale, slices, segments, convexity }) children
+    -> App "linear_extrude"
          (concat
            [ required (Just "height", LitDouble height)
            , optional (\c -> (Just "center", LitBool c)) center
@@ -399,8 +402,8 @@ toRawModel3D = \case
            ]
          )
          (map toRawModel2D children)
-  Extrude3D comment (RotateExtrude { angle, start, convexity, _facets }) children
-    -> App comment "rotate_extrude"
+  Extrude3D (RotateExtrude { angle, start, convexity, _facets }) children
+    -> App "rotate_extrude"
          (concat
            [ required (Just "angle", LitDouble angle)
            , required (Just "start", LitDouble start)

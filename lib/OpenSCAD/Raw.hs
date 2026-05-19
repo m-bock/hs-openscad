@@ -7,7 +7,8 @@ import Data.List (intercalate)
 type Comment = String
 
 data Ast
-  = App (Maybe Comment) String [(Maybe String, Lit)] [Ast]
+  = App String [(Maybe String, Lit)] [Ast]
+  | Comment Comment Ast
 
 data Lit
   = LitVec [Lit]
@@ -22,14 +23,11 @@ indent :: Int -> String
 indent depth = "\n" <> replicate (depth * 2) ' '
 
 renderAt :: Int -> Ast -> String
-renderAt depth (App comment name args children) = 
-  renderCommentAt depth comment ++
-  indent depth ++ name ++ renderArgs args ++ renderChildrenAt depth children
-
-renderCommentAt :: Int -> Maybe Comment -> String
-renderCommentAt depth = \case
-  Just comment -> indent depth ++ "// " ++ comment
-  Nothing -> ""
+renderAt depth ast = case ast of
+  (App name args children) ->
+    indent depth ++ name ++ renderArgs args ++ renderChildrenAt depth children
+  (Comment comment ast) ->
+    indent depth ++ "// " ++ comment ++ renderAt depth ast
 
 renderLit :: Lit -> String
 renderLit = \case
