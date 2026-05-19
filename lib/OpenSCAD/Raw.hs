@@ -22,11 +22,8 @@ indent :: Int -> String
 indent depth = replicate (depth * 2) ' '
 
 renderAt :: Int -> Ast -> String
-renderAt depth ast = indent depth ++ case ast of
-  App name args [] ->
-    name ++ renderArgs args ++ ";"
-  App name args children ->
-    "{" ++ name ++ renderArgs args ++ renderChildrenAt (depth + 1) children ++ "}"
+renderAt depth (App name args children) = 
+  indent depth ++ name ++ renderArgs args ++ renderChildrenAt (depth + 1) children
 
 renderLit :: Lit -> String
 renderLit = \case
@@ -47,7 +44,10 @@ renderArg (name, arg) = case name of
   Nothing -> renderLit arg
 
 renderChildrenAt :: Int -> [Ast] -> String
-renderChildrenAt depth xs = intercalate "" $ map (addNl . renderAt depth) xs
+renderChildrenAt depth xs = case xs of
+  [] -> ";"
+  [x] -> addNl $ renderAt depth x
+  xs -> "{" ++ (intercalate "" $ map (addNl . renderAt depth) xs) ++ "\n}"
 
 addNl :: String -> String
 addNl s = "\n" ++ s
