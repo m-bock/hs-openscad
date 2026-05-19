@@ -187,7 +187,7 @@ toRawModel2D = \case
   Transform2D (Resize2D { newSize, auto }) children
     -> App "resize"
          (concat
-           [ required (Just "newSize", toRawVec2Double newSize)
+           [ required (Just "newsize", toRawVec2Double newSize)
            , optional (\(a1, a2) -> (Just "auto", LitVec [LitBool a1, LitBool a2])) auto
            ]
          )
