@@ -3,10 +3,8 @@
 module OpenSCAD.Model
   ( Model3D(..)
   , Model2D(..)
-  , Primitive2D(..)
-  , Transform2D(..)
-  , Projection2D(..)
-  , Extrude3D(..)
+  , Primitive2D(..), Transform2D(..), Projection2D(..)
+  , Primitive3D(..), Transform3D(..), Extrude3D(..)
   , Facets(..)
   , V3
   , V2
