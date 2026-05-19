@@ -34,7 +34,7 @@ renderLit = \case
   LitBool x -> if x then "true" else "false"
 
 renderArgs :: [(Maybe String, Lit)] -> String
-renderArgs args = "(" ++ (intercalate "," $ map renderArg args) ++ ")"
+renderArgs args = "(" ++ (intercalate ", " $ map renderArg args) ++ ")"
 
 renderArg :: (Maybe String, Lit) -> String
 renderArg (name, arg) = case name of
@@ -44,7 +44,7 @@ renderArg (name, arg) = case name of
 renderChildrenAt :: Int -> [Ast] -> String
 renderChildrenAt depth xs = case xs of
   [] -> ";"
-  [x] -> addNl $ renderAt depth x
+  [x] -> renderAt depth x
   xs -> "{" ++ (intercalate "" $ map (addNl . renderAt depth) xs) ++ "\n}"
 
 addNl :: String -> String
