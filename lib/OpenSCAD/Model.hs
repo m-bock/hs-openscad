@@ -61,12 +61,12 @@ data Primitive2D
   | Polygon2D { points :: [V2 Double], paths :: Maybe [[Int]], convexity :: Maybe Int }
 
 data Transform2D
-  = Scale2D        { v :: V2 Double }
-  | Resize2D       { v :: V2 Double, auto :: Maybe (V2 Bool) }
-  | RotateEuler2D  { v :: V2 Double }
-  | RotateAxis2D   { a :: Double, v :: V2 Double }
-  | Translate2D    { v :: V2 Double }
-  | Mirror2D       { v :: V2 Double }
+  = Scale2D        { v2 :: V2 Double }
+  | Resize2D       { v2 :: V2 Double, auto :: Maybe (V2 Bool) }
+  | RotateEuler2D  { v2 :: V2 Double }
+  | RotateAxis2D   { a :: Double, v2 :: V2 Double }
+  | Translate2D    { v3 :: V3 Double } -- sic! 2d shapes can be translated in 3d space
+  | Mirror2D       { v2 :: V2 Double }
   | Color2D        { c :: RGB, alpha :: Maybe Double }
   | OffsetRadial2D { r :: Double }
   | OffsetDelta2D  { delta :: Double, chamfer :: Maybe Bool }
@@ -177,47 +177,47 @@ toRawModel2D = \case
            ]
          )
          []
-  Transform2D (Scale2D { v }) children
+  Transform2D (Scale2D { v2 }) children
     -> App "scale"
          (concat
-           [ required (Just "v", toRawVec2Double v)
+           [ required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Resize2D { v, auto }) children
+  Transform2D (Resize2D { v2, auto }) children
     -> App "resize"
          (concat
-           [ required (Just "v", toRawVec2Double v)
+           [ required (Just "v", toRawVec2Double v2)
            , optional (\(a1, a2) -> (Just "auto", LitVec [LitBool a1, LitBool a2])) auto
            ]
          )
          (map toRawModel2D children)
-  Transform2D (RotateEuler2D { v }) children
+  Transform2D (RotateEuler2D { v2 }) children
     -> App "rotate"
          (concat
-           [ required (Just "v", toRawVec2Double v)
+           [ required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
-  Transform2D (RotateAxis2D { a, v }) children
+  Transform2D (RotateAxis2D { a, v2 }) children
     -> App "rotate"
          (concat
            [ required (Just "a", LitDouble a)
-           , required (Just "v", toRawVec2Double v)
+           , required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Translate2D { v }) children
+  Transform2D (Translate2D { v3 }) children
     -> App "translate"
          (concat
-           [ required (Just "v", toRawVec2Double v)
+           [ required (Just "v", toRawVec3Double v3)
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Mirror2D { v }) children
+  Transform2D (Mirror2D { v2 }) children
     -> App "mirror"
          (concat
-           [ required (Just "v", toRawVec2Double v)
+           [ required (Just "v", toRawVec2Double v2)
            ]
          )
          (map toRawModel2D children)
