@@ -70,7 +70,7 @@ data Transform2D
   | Translate2D    { v3 :: V3 Double } -- sic! 2d shapes can be translated in 3d space
   | Mirror2D       { v2 :: V2 Double }
   | Color2D        { c :: Maybe RGB, alpha :: Maybe Double }
-  | OffsetRadial2D { r :: Double }
+  | OffsetRadial2D { r :: Double, _facets :: Maybe Facets }
   | OffsetDelta2D  { delta :: Double, chamfer :: Maybe Bool }
   | Fill2D
   | Minkowski2D
@@ -231,10 +231,11 @@ toRawModel2D = \case
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (OffsetRadial2D { r }) children
+  Transform2D comment (OffsetRadial2D { r, _facets }) children
     -> App comment "offset"
          (concat
            [ required (Just "r", LitDouble r)
+           , optionals toRawFacets _facets
            ]
          )
          (map toRawModel2D children)
