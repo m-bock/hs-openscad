@@ -1,3 +1,5 @@
+{- FOURMOLU_DISABLE -}
+
 module OpenSCAD.Raw (Ast(..), render) where
 
 import Data.List (intercalate)
@@ -12,7 +14,7 @@ data Ast = App String [(Maybe String, Ast)] [Ast]
 render :: Ast -> String
 render = \case
   App name args1 args2 ->
-    "{" ++ name ++ "(" ++ renderArgs1 args1 ++ ")" ++ renderMany args2 ++ ";}"
+    "{" ++ name ++ "(" ++ renderArgs1 args1 ++ ")" ++ renderMany args2 ++ "}"
 
   Id name ->
     name
@@ -35,4 +37,5 @@ renderArgs1 args = intercalate "," $ map (\(name, arg) -> case name of
   ) args
 
 renderMany :: [Ast] -> String
+renderMany [] = ";"
 renderMany xs = intercalate "" $ map render xs

@@ -1,3 +1,5 @@
+{- FOURMOLU_DISABLE -}
+
 module OpenSCAD.Model
   ( Model3D(..)
   , Model2D(..)
