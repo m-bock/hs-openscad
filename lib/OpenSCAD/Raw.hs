@@ -4,8 +4,10 @@ module OpenSCAD.Raw (Ast(..), Lit(..), render) where
 
 import Data.List (intercalate)
 
+type Comment = String
+
 data Ast
-  = App String [(Maybe String, Lit)] [Ast]
+  = App (Maybe Comment) String [(Maybe String, Lit)] [Ast]
 
 data Lit
   = LitVec [Lit]
@@ -20,11 +22,14 @@ indent :: Int -> String
 indent depth = "\n" <> replicate (depth * 2) ' '
 
 renderAt :: Int -> Ast -> String
-renderAt depth (App name args children) = 
-  prefix ++ "// Comment" ++ "\n" ++
-  prefix ++ name ++ renderArgs args ++ renderChildrenAt depth children
-  where
-    prefix = if depth > 0 then indent depth else ""
+renderAt depth (App comment name args children) = 
+  renderCommentAt depth comment ++
+  indent depth ++ name ++ renderArgs args ++ renderChildrenAt depth children
+
+renderCommentAt :: Int -> Maybe Comment -> String
+renderCommentAt depth = \case
+  Just comment -> indent depth ++ "// " ++ comment
+  Nothing -> ""
 
 renderLit :: Lit -> String
 renderLit = \case
