@@ -16,8 +16,6 @@ data Lit
 render :: Ast -> String
 render = renderAt 0
 
--- Let's make this as LISPy as possible.
-
 indent :: Int -> String
 indent depth = replicate (depth * 2) ' '
 
