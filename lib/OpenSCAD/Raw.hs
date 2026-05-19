@@ -44,7 +44,7 @@ renderArg (name, arg) = case name of
 renderChildrenAt :: Int -> [Ast] -> String
 renderChildrenAt depth xs = case xs of
   [] -> ";"
-  [x] -> renderAt depth x
+  [x] -> "\n" ++ renderAt depth x
   xs -> "{" ++ (intercalate "" $ map (addNl . renderAt depth) xs) ++ "\n}"
 
 addNl :: String -> String
