@@ -15,7 +15,7 @@ module OpenSCAD.Model
   , render2D
   ) where
 
-import OpenSCAD.Raw (Ast(..))
+import OpenSCAD.Raw (Ast(..), Lit(..))
 import qualified OpenSCAD.Raw as Raw
 import Data.Monoid (First(..))
 
@@ -171,8 +171,8 @@ toRawModel2D = \case
   Primitive2D (Polygon2D { points, paths, convexity })
     -> App "polygon"
          (concat
-           [ required (Just "points", Vec $ map toRawVec2Double points)
-           , optional (\p -> (Just "paths", Vec $ map (Vec . map LitInt) p)) paths
+           [ required (Just "points", LitVec $ map toRawVec2Double points)
+           , optional (\p -> (Just "paths", LitVec $ map (LitVec . map LitInt) p)) paths
            , optional (\c -> (Just "convexity", LitInt c)) convexity
            ]
          )
@@ -188,7 +188,7 @@ toRawModel2D = \case
     -> App "resize"
          (concat
            [ required (Just "v", toRawVec2Double v)
-           , optional (\(a1, a2) -> (Just "auto", Vec [LitBool a1, LitBool a2])) auto
+           , optional (\(a1, a2) -> (Just "auto", LitVec [LitBool a1, LitBool a2])) auto
            ]
          )
          (map toRawModel2D children)
@@ -307,8 +307,8 @@ toRawModel3D = \case
   Primitive3D (Polyhedron3D { points, faces, convexity })
     -> App "polyhedron"
          (concat
-           [ required (Just "points", Vec $ map toRawVec3Double points)
-           , optional (\f -> (Just "faces", Vec $ map (Vec . map LitInt) f)) faces
+           [ required (Just "points", LitVec $ map toRawVec3Double points)
+           , optional (\f -> (Just "faces", LitVec $ map (LitVec . map LitInt) f)) faces
            , optional (\c -> (Just "convexity", LitInt c)) convexity
            ]
          )
@@ -324,7 +324,7 @@ toRawModel3D = \case
     -> App "resize"
          (concat
            [ required (Just "v", toRawVec3Double v)
-           , optional (\(a1, a2, a3) -> (Just "auto", Vec [LitBool a1, LitBool a2, LitBool a3])) auto
+           , optional (\(a1, a2, a3) -> (Just "auto", LitVec [LitBool a1, LitBool a2, LitBool a3])) auto
            ]
          )
          (map toRawModel3D children)
@@ -409,17 +409,17 @@ toRawModel3D = \case
          )
          (map toRawModel2D children)
 
-toRawFacets :: Facets -> [ (Maybe String, Raw.Ast) ]
+toRawFacets :: Facets -> [ (Maybe String, Raw.Lit) ]
 toRawFacets Facets { fa, fs, fn } =
     (maybe [] (\a -> [(Just "$fa", LitDouble a)]) fa) ++
     (maybe [] (\s -> [(Just "$fs", LitDouble s)]) fs) ++
     (maybe [] (\n -> [(Just "$fn", LitInt n)   ]) fn)
 
-toRawVec3Double :: V3 Double -> Raw.Ast
-toRawVec3Double (x, y, z) = Vec [LitDouble x, LitDouble y, LitDouble z]
+toRawVec3Double :: V3 Double -> Raw.Lit
+toRawVec3Double (x, y, z) = LitVec [LitDouble x, LitDouble y, LitDouble z]
 
-toRawVec2Double :: V2 Double -> Raw.Ast
-toRawVec2Double (x, y) = Vec [LitDouble x, LitDouble y]
+toRawVec2Double :: V2 Double -> Raw.Lit
+toRawVec2Double (x, y) = LitVec [LitDouble x, LitDouble y]
 
 -------------------------------------------------------------------------------
 --- Render
