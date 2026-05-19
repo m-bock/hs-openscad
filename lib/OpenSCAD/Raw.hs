@@ -17,12 +17,13 @@ render :: Ast -> String
 render = renderAt 0
 
 indent :: Int -> String
-indent 0 = ""
 indent depth = "\n" <> replicate (depth * 2) ' '
 
 renderAt :: Int -> Ast -> String
 renderAt depth (App name args children) = 
-  indent depth ++ name ++ renderArgs args ++ renderChildrenAt depth children
+  prefix ++ name ++ renderArgs args ++ renderChildrenAt depth children
+  where
+    prefix = if depth > 0 then indent depth else ""
 
 renderLit :: Lit -> String
 renderLit = \case
