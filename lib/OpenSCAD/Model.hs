@@ -66,7 +66,7 @@ data Transform2D
   = Scale2D        { v2 :: V2 Double }
   | Resize2D       { newSize :: V2 Double, auto :: Maybe (V2 Bool) }
   | RotateEuler2D  { v2 :: V2 Double }
-  | RotateAxis2D   { a :: Double, v2 :: V2 Double }
+  | RotateAxis2D   { a :: Double, mv2 :: Maybe (V2 Double) }
   | Translate2D    { v3 :: V3 Double } -- sic! 2d shapes can be translated in 3d space
   | Mirror2D       { v2 :: V2 Double }
   | Color2D        { c :: RGB, alpha :: Maybe Double }
@@ -201,11 +201,11 @@ toRawModel2D = \case
            ]
          )
          (map toRawModel2D children)
-  Transform2D comment (RotateAxis2D { a, v2 }) children
+  Transform2D comment (RotateAxis2D { a, mv2 }) children
     -> App comment "rotate"
          (concat
            [ required (Just "a", LitDouble a)
-           , required (Just "v", toRawVec2Double v2)
+           , optional (\v -> (Just "v", toRawVec2Double v)) mv2
            ]
          )
          (map toRawModel2D children)
