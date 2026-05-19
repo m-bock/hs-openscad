@@ -323,7 +323,7 @@ toRawModel3D = \case
   Transform3D (Resize3D { newSize, auto }) children
     -> App "resize"
          (concat
-           [ required (Just "newSize", toRawVec3Double newSize)
+           [ required (Just "newsize", toRawVec3Double newSize)
            , optional (\(a1, a2, a3) -> (Just "auto", LitVec [LitBool a1, LitBool a2, LitBool a3])) auto
            ]
          )
