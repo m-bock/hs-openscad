@@ -62,7 +62,7 @@ data Primitive2D
 
 data Transform2D
   = Scale2D        { v2 :: V2 Double }
-  | Resize2D       { v2 :: V2 Double, auto :: Maybe (V2 Bool) }
+  | Resize2D       { newSize :: V2 Double, auto :: Maybe (V2 Bool) }
   | RotateEuler2D  { v2 :: V2 Double }
   | RotateAxis2D   { a :: Double, v2 :: V2 Double }
   | Translate2D    { v3 :: V3 Double } -- sic! 2d shapes can be translated in 3d space
@@ -125,7 +125,7 @@ data Primitive3D
 
 data Transform3D
   = Scale3D        { v :: V3 Double }
-  | Resize3D       { v :: V3 Double, auto :: Maybe (V3 Bool) }
+  | Resize3D       { newSize :: V3 Double, auto :: Maybe (V3 Bool) }
   | RotateEuler3D  { v :: V3 Double }
   | RotateAxis3D   { a :: Double, v :: V3 Double }
   | Translate3D    { v :: V3 Double }
@@ -184,10 +184,10 @@ toRawModel2D = \case
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Resize2D { v2, auto }) children
+  Transform2D (Resize2D { newSize, auto }) children
     -> App "resize"
          (concat
-           [ required (Just "v", toRawVec2Double v2)
+           [ required (Just "newSize", toRawVec2Double newSize)
            , optional (\(a1, a2) -> (Just "auto", LitVec [LitBool a1, LitBool a2])) auto
            ]
          )
@@ -320,10 +320,10 @@ toRawModel3D = \case
            ]
          )
          (map toRawModel3D children)
-  Transform3D (Resize3D { v, auto }) children
+  Transform3D (Resize3D { newSize, auto }) children
     -> App "resize"
          (concat
-           [ required (Just "v", toRawVec3Double v)
+           [ required (Just "newSize", toRawVec3Double newSize)
            , optional (\(a1, a2, a3) -> (Just "auto", LitVec [LitBool a1, LitBool a2, LitBool a3])) auto
            ]
          )
