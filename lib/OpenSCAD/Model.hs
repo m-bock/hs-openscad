@@ -69,7 +69,7 @@ data Transform2D
   | RotateAxis2D   { a :: Double, mv2 :: Maybe (V2 Double) }
   | Translate2D    { v3 :: V3 Double } -- sic! 2d shapes can be translated in 3d space
   | Mirror2D       { v2 :: V2 Double }
-  | Color2D        { c :: RGB, alpha :: Maybe Double }
+  | Color2D        { c :: Maybe RGB, alpha :: Maybe Double }
   | OffsetRadial2D { r :: Double }
   | OffsetDelta2D  { delta :: Double, chamfer :: Maybe Bool }
   | Fill2D
@@ -226,7 +226,7 @@ toRawModel2D = \case
   Transform2D comment (Color2D { c, alpha }) children
     -> App comment "color"
          (concat
-           [ required (Just "c", toRawVec3Double c)
+           [ optional (\co -> (Just "c", toRawVec3Double co)) c
            , optional (\a -> (Just "alpha", LitDouble a)) alpha
            ]
          )
