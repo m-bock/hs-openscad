@@ -35,8 +35,7 @@ renderLit :: Lit -> String
 renderLit = \case
   LitVec vs ->
     "[" ++ intercalate ", " (map renderLit vs) ++ "]"
-  LitDouble x ->
-    show x
+  LitDouble x -> formatDouble x
   LitInt x ->
     show x
   LitBool x -> if x then "true" else "false"
@@ -54,3 +53,11 @@ renderChildrenAt depth xs = case xs of
   [] -> ";"
   [x] -> renderAt (depth + 1) x
   xs -> "{" ++ (intercalate "" $ map (renderAt (depth + 1)) xs) ++ indent depth ++ "}"
+
+isRoundIntEps :: Double -> Bool
+isRoundIntEps x = abs (x - fromInteger (round x)) < 1e-9
+
+formatDouble :: Double -> String
+formatDouble x
+  | isRoundIntEps x = show (round x :: Integer)
+  | otherwise       = show x
