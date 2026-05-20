@@ -13,12 +13,16 @@ module OpenSCAD.Model
   , render2D
   ) where
 
+-------------------------------------------------------------------------------
+-- / Imports
+-------------------------------------------------------------------------------
+
 import OpenSCAD.Raw (Ast(..), Lit(..))
 import qualified OpenSCAD.Raw as Raw
 import Data.Monoid (First(..))
 
 -------------------------------------------------------------------------------
---- Types
+-- / Types
 -------------------------------------------------------------------------------
 
 data Facets = Facets {
@@ -45,7 +49,7 @@ type RGB = V3 Double
 type Comment = String
 
 -------------------------------------------------------------------------------
---- 2D
+-- / Types / 2D
 -------------------------------------------------------------------------------
 
 data Model2D
@@ -57,20 +61,79 @@ data Model2D
 data Projection2D = RegularProjection2D { cut :: Maybe Bool }
 
 data Primitive2D
-  = Circle2D  { d :: Double, _facets :: Maybe Facets }
-  | Square2D  { size :: V2 Double, center :: Maybe Bool }
-  | Polygon2D { points :: [V2 Double], paths :: Maybe [[Int]], convexity :: Maybe Int }
+  = Circle2D
+      { circleDiameter :: Double
+      , circleFacets   :: Maybe Facets
+      }
+  | Square2D
+      { squareSize   :: V2 Double
+      , squareCenter :: Maybe Bool
+      }
+  | Polygon2D
+      { polygonPoints    :: [V2 Double]
+      , polygonPaths     :: Maybe [[Int]]
+      , polygonConvexity :: Maybe Int
+      }
+  | Text2D
+      { textText      :: String
+      , textSize      :: Maybe Double
+      , textFont      :: Maybe String
+      , textDirection :: Maybe Direction
+      , textLanguage  :: Maybe String
+      , textScript    :: Maybe String
+      , textHAlign    :: Maybe HorizontalAlignment
+      , textVAlign    :: Maybe VerticalAlignment
+      , textSpacing   :: Maybe Double
+      , textEm        :: Maybe Double
+      , textFacets    :: Maybe Facets
+      }
+
+data Direction = LeftToRight | RightToLeft | TopToBottom | BottomToTop
+
+data HorizontalAlignment
+  = HLeft
+  | HCenter
+  | HRight
+
+data VerticalAlignment
+  = VTop
+  | VCenter
+  | VBaseline
+  | VBottom
 
 data Transform2D
-  = Scale2D        { v2 :: V2 Double }
-  | Resize2D       { newSize :: V2 Double, auto :: Maybe (V2 Bool) }
-  | RotateEuler2D  { v2 :: V2 Double }
-  | RotateAxis2D   { a :: Double, mv2 :: Maybe (V2 Double) }
-  | Translate2D    { v3 :: V3 Double } -- sic! 2d shapes can be translated in 3d space
-  | Mirror2D       { v2 :: V2 Double }
-  | Color2D        { c :: Maybe RGB, alpha :: Maybe Double }
-  | OffsetRadial2D { r :: Double, _facets :: Maybe Facets }
-  | OffsetDelta2D  { delta :: Double, chamfer :: Maybe Bool }
+  = Scale2D
+      { scaleVector :: V2 Double
+      }
+  | Resize2D
+      { resizeNewSize :: V2 Double
+      , resizeAuto :: Maybe (V2 Bool)
+      }
+  | RotateEuler2D
+      { rotateEulerVector :: V2 Double
+      }
+  | RotateAxis2D
+      { rotateAxisAngle :: Double
+      , rotateAxisVector :: Maybe (V2 Double)
+      }
+  | Translate2D
+      { translateVector :: V3 Double -- sic! 2d shapes can be translated in 3d space
+      }
+  | Mirror2D
+      { mirrorVector :: V2 Double
+      }
+  | Color2D
+      { colorColor :: Maybe RGB
+      , colorAlpha :: Maybe Double
+      }
+  | OffsetRadial2D
+      { offsetRadialRadius :: Double
+      , offsetRadialFacets :: Maybe Facets
+      }
+  | OffsetDelta2D
+      { offsetDeltaDelta :: Double
+      , offsetDeltaChamfer :: Maybe Bool
+      }
   | Fill2D
   | Minkowski2D
   | Hull2D
@@ -79,62 +142,77 @@ data Transform2D
   | Difference2D
 
 -------------------------------------------------------------------------------
---- 3D
+-- / Types / 3D
 -------------------------------------------------------------------------------
 
 data Model3D
   = Primitive3D Primitive3D
   | Transform3D Transform3D [Model3D]
   | Extrude3D   Extrude3D   [Model2D]
-  | Comment3D Comment Model3D
+  | Comment3D   Comment Model3D
 
 data Extrude3D
   = LinearExtrude
-      { height    :: Double
-      , center    :: Maybe Bool
-      , twist     :: Maybe Double
-      , scale     :: Maybe Double
-      , slices    :: Maybe Int
-      , segments  :: Maybe Int
-      , convexity :: Maybe Int
+      { linearHeight    :: Double
+      , linearCenter    :: Maybe Bool
+      , linearTwist     :: Maybe Double
+      , linearScale     :: Maybe Double
+      , linearSlices    :: Maybe Int
+      , linearSegments  :: Maybe Int
+      , linearConvexity :: Maybe Int
       }
   | RotateExtrude
-      { angle :: Double
-      , start :: Double
-      , convexity :: Maybe Int
-      , _facets :: Maybe Facets
+      { rotateAngle     :: Double
+      , rotateStart     :: Double
+      , rotateConvexity :: Maybe Int
+      , rotateFacets    :: Maybe Facets
       }
 
 data Primitive3D
   = Cube3D
-      { size :: V3 Double
-      , center :: Maybe Bool
+      { cubeSize   :: V3 Double
+      , cubeCenter :: Maybe Bool
       }
   | Cylinder3D
-      { h :: Double
-      , d1 :: Double
-      , d2 :: Double
-      , center :: Maybe Bool
-      , _facets :: Maybe Facets
+      { cylinderHeight    :: Double
+      , cylinderDiameter1 :: Double
+      , cylinderDiameter2 :: Double
+      , cylinderCenter    :: Maybe Bool
+      , cylinderFacets    :: Maybe Facets
       }
   | Sphere3D
-      { d :: Double
-      , _facets :: Maybe Facets
+      { sphereDiameter :: Double
+      , sphereFacets   :: Maybe Facets
       }
   | Polyhedron3D
-      { points :: [V3 Double]
-      , faces :: Maybe [[Int]]
-      , convexity :: Maybe Int
+      { polyhedronPoints    :: [V3 Double]
+      , polyhedronFaces     :: Maybe [[Int]]
+      , polyhedronConvexity :: Maybe Int
       }
 
 data Transform3D
-  = Scale3D        { v :: V3 Double }
-  | Resize3D       { newSize :: V3 Double, auto :: Maybe (V3 Bool) }
-  | RotateEuler3D  { v :: V3 Double }
-  | RotateAxis3D   { a :: Double, v :: V3 Double }
-  | Translate3D    { v :: V3 Double }
-  | Mirror3D       { v :: V3 Double }
-  | Color3D        { c :: Maybe RGB, alpha :: Maybe Double }
+  = Scale3D
+      { scaleVector :: V3 Double
+      }
+  | Resize3D
+      { resizeNewSize :: V3 Double
+      , resizeAuto    :: Maybe (V3 Bool)
+      }
+  | RotateEuler3D
+      { rotateEulerVector :: V3 Double
+      }
+  | RotateAxis3D
+      { rotateAxisAngle  :: Double
+      , rotateAxisVector :: V3 Double
+      }
+  | Translate3D
+      { translateVector :: V3 Double }
+  | Mirror3D
+      { mirrorVector :: V3 Double }
+  | Color3D
+      { colorColor :: Maybe RGB
+      , colorAlpha :: Maybe Double
+      }
   | Union3D  
   | Intersection3D 
   | Difference3D
@@ -142,111 +220,104 @@ data Transform3D
   | Hull3D
   
 -------------------------------------------------------------------------------
---- ToRaw
+-- / ToRaw / 2D
 -------------------------------------------------------------------------------
-
-optional :: (a -> b) -> Maybe a -> [b]
-optional f = maybe [] (pure . f)
-
-optionals :: (a -> [b]) -> Maybe a -> [b]
-optionals f = maybe [] f
-
-required :: a -> [a]
-required x = [x]
 
 toRawModel2D :: Model2D -> Raw.Ast
 toRawModel2D = \case
   Comment2D comment ast -> Comment comment (toRawModel2D ast)
-  Primitive2D (Circle2D { d, _facets })
+  Primitive2D (Circle2D { circleDiameter, circleFacets })
     -> App "circle"
          (concat
-           [ required (Just "d", LitDouble d)
-           , optionals toRawFacets _facets
+           [ required "d" $ LitDouble circleDiameter
+           , optionals toRawFacets circleFacets
            ]
          )
          []
-  Primitive2D (Square2D { size, center })
+  Primitive2D (Square2D { squareSize, squareCenter })
     -> App "square"
          (concat
-           [ required (Just "size", toRawVec2Double size)
-           , optional (\c -> (Just "center", LitBool c)) center
+           [ required "size"   $ toRawVec2Double squareSize
+           , optional "center" $ fmap LitBool squareCenter
            ]
          )
          []
-  Primitive2D (Polygon2D { points, paths, convexity })
+  Primitive2D (Polygon2D { polygonPoints, polygonPaths, polygonConvexity })
     -> App "polygon"
          (concat
-           [ required (Just "points", LitVec $ map toRawVec2Double points)
-           , optional (\p -> (Just "paths", LitVec $ map (LitVec . map LitInt) p)) paths
-           , optional (\c -> (Just "convexity", LitInt c)) convexity
+           [ required "points"    $ LitVec $ map toRawVec2Double polygonPoints
+           , optional "paths"     $ fmap (LitVec . map (LitVec . map LitInt)) polygonPaths
+           , optional "convexity" $ fmap LitInt polygonConvexity
            ]
          )
          []
-  Transform2D (Scale2D { v2 }) children
+  Primitive2D (Text2D { textText, textSize, textFont, textDirection, textLanguage, textScript, textHAlign, textVAlign, textSpacing, textEm, textFacets })
+    -> App "text" [] [] -- TODO: implement
+  Transform2D (Scale2D { scaleVector }) children
     -> App "scale"
          (concat
-           [ required (Just "v", toRawVec2Double v2)
+           [ required "v" $ toRawVec2Double scaleVector
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Resize2D { newSize, auto }) children
+  Transform2D (Resize2D { resizeNewSize, resizeAuto }) children
     -> App "resize"
          (concat
-           [ required (Just "newsize", toRawVec2Double newSize)
-           , optional (\(a1, a2) -> (Just "auto", LitVec [LitBool a1, LitBool a2])) auto
+           [ required "newsize" $ toRawVec2Double resizeNewSize
+           , optional "auto"    $ fmap (\(a1, a2) -> LitVec [LitBool a1, LitBool a2]) resizeAuto
            ]
          )
          (map toRawModel2D children)
-  Transform2D (RotateEuler2D { v2 }) children
+  Transform2D (RotateEuler2D { rotateEulerVector }) children
     -> App "rotate"
          (concat
-           [ required (Just "v", toRawVec2Double v2)
+           [ required "v" $ toRawVec2Double rotateEulerVector
            ]
          )
          (map toRawModel2D children)
-  Transform2D (RotateAxis2D { a, mv2 }) children
+  Transform2D (RotateAxis2D { rotateAxisAngle, rotateAxisVector }) children
     -> App "rotate"
          (concat
-           [ required (Just "a", LitDouble a)
-           , optional (\v -> (Just "v", toRawVec2Double v)) mv2
+           [ required "a" $ LitDouble rotateAxisAngle
+           , optional "v" $ fmap toRawVec2Double rotateAxisVector
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Translate2D { v3 }) children
+  Transform2D (Translate2D { translateVector }) children
     -> App "translate"
          (concat
-           [ required (Just "v", toRawVec3Double v3)
+           [ required "v" $ toRawVec3Double translateVector
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Mirror2D { v2 }) children
+  Transform2D (Mirror2D { mirrorVector }) children
     -> App "mirror"
          (concat
-           [ required (Just "v", toRawVec2Double v2)
+           [ required "v" $ toRawVec2Double mirrorVector
            ]
          )
          (map toRawModel2D children)
-  Transform2D (Color2D { c, alpha }) children
+  Transform2D (Color2D { colorColor, colorAlpha }) children
     -> App "color"
          (concat
-           [ optional (\co -> (Just "c", toRawVec3Double co)) c
-           , optional (\a -> (Just "alpha", LitDouble a)) alpha
+           [ optional "c"     $ fmap toRawVec3Double colorColor
+           , optional "alpha" $ fmap LitDouble colorAlpha
            ]
          )
          (map toRawModel2D children)
-  Transform2D (OffsetRadial2D { r, _facets }) children
+  Transform2D (OffsetRadial2D { offsetRadialRadius, offsetRadialFacets }) children
     -> App "offset"
          (concat
-           [ required (Just "r", LitDouble r)
-           , optionals toRawFacets _facets
+           [ required "r" $ LitDouble offsetRadialRadius
+           , optionals toRawFacets offsetRadialFacets
            ]
          )
          (map toRawModel2D children)
-  Transform2D (OffsetDelta2D { delta, chamfer }) children
+  Transform2D (OffsetDelta2D { offsetDeltaDelta, offsetDeltaChamfer }) children
     -> App "offset"
          (concat
-           [ required (Just "delta", LitDouble delta)
-           , optional (\c -> (Just "chamfer", LitBool c)) chamfer
+           [ required "delta"   $ LitDouble offsetDeltaDelta
+           , optional "chamfer" $ fmap LitBool offsetDeltaChamfer
            ]
          )
          (map toRawModel2D children)
@@ -277,101 +348,104 @@ toRawModel2D = \case
   Projection2D (RegularProjection2D { cut }) children
     -> App "projection"
          (concat
-           [ optional (\c -> (Just "cut", LitBool c)) cut
+           [ optional "cut" $ fmap LitBool cut
            ]
          )
          (map toRawModel3D children)
 
+-------------------------------------------------------------------------------
+-- / ToRaw / 3D
+-------------------------------------------------------------------------------
 
 toRawModel3D :: Model3D -> Raw.Ast
 toRawModel3D = \case
   Comment3D comment ast
     -> Comment comment (toRawModel3D ast)
-  Primitive3D (Cube3D { size, center })
+  Primitive3D (Cube3D { cubeSize, cubeCenter })
     -> App "cube"
          (concat
-           [ required (Just "size", toRawVec3Double size)
-           , optional (\c -> (Just "center", LitBool c)) center
+           [ required "size"   $ toRawVec3Double cubeSize
+           , optional "center" $ fmap LitBool cubeCenter
            ]
          )
          []
-  Primitive3D (Cylinder3D { h, d1, d2, center, _facets })
+  Primitive3D (Cylinder3D { cylinderHeight, cylinderDiameter1, cylinderDiameter2, cylinderCenter, cylinderFacets })
     -> App "cylinder"
          (concat
-           [ required (Just "h", LitDouble h)
-           , required (Just "d1", LitDouble d1)
-           , required (Just "d2", LitDouble d2)
-           , optional (\c -> (Just "center", LitBool c)) center
-           , optionals toRawFacets _facets
+           [ required "h"      $ LitDouble cylinderHeight
+           , required "d1"     $ LitDouble cylinderDiameter1
+           , required "d2"     $ LitDouble cylinderDiameter2
+           , optional "center" $ fmap LitBool cylinderCenter
+           , optionals toRawFacets cylinderFacets
            ]
          )
          []
-  Primitive3D (Sphere3D { d, _facets })
+  Primitive3D (Sphere3D { sphereDiameter, sphereFacets })
     -> App "sphere"
          (concat
-           [ required (Just "d", LitDouble d)
-           , optionals toRawFacets _facets
+           [ required "d" $ LitDouble sphereDiameter
+           , optionals toRawFacets sphereFacets
            ]
          )
          []
-  Primitive3D (Polyhedron3D { points, faces, convexity })
+  Primitive3D (Polyhedron3D { polyhedronPoints, polyhedronFaces, polyhedronConvexity })
     -> App "polyhedron"
          (concat
-           [ required (Just "points", LitVec $ map toRawVec3Double points)
-           , optional (\f -> (Just "faces", LitVec $ map (LitVec . map LitInt) f)) faces
-           , optional (\c -> (Just "convexity", LitInt c)) convexity
+           [ required "points" $ LitVec $ map toRawVec3Double polyhedronPoints
+           , optional "faces" $ fmap (LitVec . map (LitVec . map LitInt)) polyhedronFaces
+           , optional "convexity" $ fmap LitInt polyhedronConvexity
            ]
          )
          []
-  Transform3D (Scale3D { v }) children
+  Transform3D (Scale3D { scaleVector }) children
     -> App "scale"
          (concat
-           [ required (Just "v", toRawVec3Double v)
+           [ required "v" $ toRawVec3Double scaleVector
            ]
          )
          (map toRawModel3D children)
-  Transform3D (Resize3D { newSize, auto }) children
+  Transform3D (Resize3D { resizeNewSize, resizeAuto }) children
     -> App "resize"
          (concat
-           [ required (Just "newsize", toRawVec3Double newSize)
-           , optional (\(a1, a2, a3) -> (Just "auto", LitVec [LitBool a1, LitBool a2, LitBool a3])) auto
+           [ required "newsize" $ toRawVec3Double resizeNewSize
+           , optional "auto"    $ fmap (\(a1, a2, a3) -> LitVec [LitBool a1, LitBool a2, LitBool a3]) resizeAuto
            ]
          )
          (map toRawModel3D children)
-  Transform3D (RotateEuler3D { v }) children
+  Transform3D (RotateEuler3D { rotateEulerVector }) children
     -> App "rotate"
          (concat
-           [ required (Just "v", toRawVec3Double v)
+           [ required "v" $ toRawVec3Double rotateEulerVector
            ]
          )
          (map toRawModel3D children)
-  Transform3D (RotateAxis3D { a, v }) children
+  Transform3D (RotateAxis3D { rotateAxisAngle, rotateAxisVector }) children
     -> App "rotate"
          (concat
-           [ required (Just "a", LitDouble a)
-           , required (Just "v", toRawVec3Double v)
+           [ required "a" $ LitDouble rotateAxisAngle
+           , required "v" $ toRawVec3Double rotateAxisVector
            ]
          )
          (map toRawModel3D children)
-  Transform3D (Translate3D { v }) children
+  Transform3D (Translate3D { translateVector }) children
     -> App "translate"
          (concat
-           [ required (Just "v", toRawVec3Double v)
+           [ required "v" $ toRawVec3Double translateVector
            ]
          )
          (map toRawModel3D children)
-  Transform3D (Mirror3D { v }) children
+  Transform3D (Mirror3D { mirrorVector }) children
     -> App "mirror"
          (concat
-           [ required (Just "v", toRawVec3Double v)
+           [ required "v" $ toRawVec3Double mirrorVector
            ]
          )
          (map toRawModel3D children)
-  Transform3D (Color3D { c, alpha }) children
+  Transform3D (Color3D { colorColor, colorAlpha }) children
     -> App "color"
          (concat
-           [ optional (\co -> (Just "c", toRawVec3Double co)) c
-           , optional (\a -> (Just "alpha", LitDouble a)) alpha
+           [ optional "c" $ fmap toRawVec3Double colorColor
+           , optional "alpha" $ fmap LitDouble colorAlpha
            ]
          )
          (map toRawModel3D children)
@@ -395,26 +469,26 @@ toRawModel3D = \case
     -> App "hull"
          []
          (map toRawModel3D children)
-  Extrude3D (LinearExtrude { height, center, twist, scale, slices, segments, convexity }) children
+  Extrude3D (LinearExtrude { linearHeight, linearCenter, linearTwist, linearScale, linearSlices, linearSegments, linearConvexity }) children
     -> App "linear_extrude"
          (concat
-           [ required (Just "height", LitDouble height)
-           , optional (\c -> (Just "center", LitBool c)) center
-           , optional (\t -> (Just "twist", LitDouble t)) twist
-           , optional (\s -> (Just "scale", LitDouble s)) scale
-           , optional (\s -> (Just "slices", LitInt s)) slices
-           , optional (\s -> (Just "segments", LitInt s)) segments
-           , optional (\c -> (Just "convexity", LitInt c)) convexity
+           [ required "height"    $ LitDouble linearHeight
+           , optional "center"    $ fmap LitBool linearCenter
+           , optional "twist"     $ fmap LitDouble linearTwist
+           , optional "scale"     $ fmap LitDouble linearScale
+           , optional "slices"    $ fmap LitInt linearSlices
+           , optional "segments"  $ fmap LitInt linearSegments
+           , optional "convexity" $ fmap LitInt linearConvexity
            ]
          )
          (map toRawModel2D children)
-  Extrude3D (RotateExtrude { angle, start, convexity, _facets }) children
+  Extrude3D (RotateExtrude { rotateAngle, rotateStart, rotateConvexity, rotateFacets }) children
     -> App "rotate_extrude"
          (concat
-           [ required (Just "angle", LitDouble angle)
-           , required (Just "start", LitDouble start)
-           , optional (\c -> (Just "convexity", LitInt c)) convexity
-           , optionals toRawFacets _facets
+           [ required "angle"     $ LitDouble rotateAngle
+           , required "start"     $ LitDouble rotateStart
+           , optional "convexity" $ fmap LitInt rotateConvexity
+           , optionals toRawFacets rotateFacets
            ]
          )
          (map toRawModel2D children)
@@ -432,7 +506,22 @@ toRawVec2Double :: V2 Double -> Raw.Lit
 toRawVec2Double (x, y) = LitVec [LitDouble x, LitDouble y]
 
 -------------------------------------------------------------------------------
---- Render
+-- / Helpers
+-------------------------------------------------------------------------------
+
+optionals :: (a -> [b]) -> Maybe a -> [b]
+optionals f = maybe [] f
+
+required :: String -> a -> [(Maybe String, a)]
+required name x = [(Just name, x)]
+
+optional :: String -> Maybe a -> [(Maybe String, a)]
+optional name x = case x of
+  Just x -> [(Just name, x)]
+  Nothing -> []
+
+-------------------------------------------------------------------------------
+-- / Render
 -------------------------------------------------------------------------------
 
 render3D :: Model3D -> String

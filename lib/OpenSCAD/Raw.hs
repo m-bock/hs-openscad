@@ -4,6 +4,10 @@ module OpenSCAD.Raw (Ast(..), Lit(..), render) where
 
 import Data.List (intercalate)
 
+-------------------------------------------------------------------------------
+-- / Types
+-------------------------------------------------------------------------------
+
 type Comment = String
 
 data Ast
@@ -16,11 +20,12 @@ data Lit
   | LitInt Int
   | LitBool Bool
 
+-------------------------------------------------------------------------------
+-- / Render
+-------------------------------------------------------------------------------
+
 render :: Ast -> String
 render = renderAt 0
-
-indent :: Int -> String
-indent depth = "\n" <> replicate (depth * 2) ' '
 
 renderAt :: Int -> Ast -> String
 renderAt depth ast = case ast of
@@ -52,6 +57,10 @@ renderChildrenAt depth xs = case xs of
   [x] -> renderAt (depth + 1) x
   xs -> "{" ++ (intercalate "" $ map (renderAt (depth + 1)) xs) ++ indent depth ++ "}"
 
+-------------------------------------------------------------------------------
+-- / Helpers
+-------------------------------------------------------------------------------
+
 isRoundIntEps :: Double -> Bool
 isRoundIntEps x = abs (x - fromInteger (round x)) < 1e-9
 
@@ -59,3 +68,6 @@ formatDouble :: Double -> String
 formatDouble x
   | isRoundIntEps x = show (round x :: Integer)
   | otherwise       = show x
+
+indent :: Int -> String
+indent depth = "\n" <> replicate (depth * 2) ' '
