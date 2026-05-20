@@ -15,10 +15,11 @@ data Ast
   | Comment Comment Ast
 
 data Lit
-  = LitVec [Lit]
+  = LitVec    [Lit]
   | LitDouble Double
-  | LitInt Int
-  | LitBool Bool
+  | LitInt    Int
+  | LitBool   Bool
+  | LitString String
 
 -------------------------------------------------------------------------------
 -- / Render
@@ -42,6 +43,7 @@ renderLit = \case
   LitInt x ->
     show x
   LitBool x -> if x then "true" else "false"
+  LitString x -> show x
 
 renderArgs :: [(Maybe String, Lit)] -> String
 renderArgs args = "(" ++ (intercalate ", " $ map renderArg args) ++ ")"

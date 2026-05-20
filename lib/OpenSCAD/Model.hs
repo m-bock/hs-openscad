@@ -48,6 +48,19 @@ type RGB = V3 Double
 
 type Comment = String
 
+data Direction = LeftToRight | RightToLeft | TopToBottom | BottomToTop
+
+data HorizontalAlignment
+  = HLeft
+  | HCenter
+  | HRight
+
+data VerticalAlignment
+  = VTop
+  | VCenter
+  | VBaseline
+  | VBottom
+
 -------------------------------------------------------------------------------
 -- / Types / 2D
 -------------------------------------------------------------------------------
@@ -87,19 +100,6 @@ data Primitive2D
       , textEm        :: Maybe Double
       , textFacets    :: Maybe Facets
       }
-
-data Direction = LeftToRight | RightToLeft | TopToBottom | BottomToTop
-
-data HorizontalAlignment
-  = HLeft
-  | HCenter
-  | HRight
-
-data VerticalAlignment
-  = VTop
-  | VCenter
-  | VBaseline
-  | VBottom
 
 data Transform2D
   = Scale2D
@@ -225,7 +225,10 @@ data Transform3D
 
 toRawModel2D :: Model2D -> Raw.Ast
 toRawModel2D = \case
+  -- ** Comment2D
   Comment2D comment ast -> Comment comment (toRawModel2D ast)
+
+  -- ** Primitive2D
   Primitive2D (Circle2D { circleDiameter, circleFacets })
     -> App "circle"
          (concat
@@ -252,7 +255,24 @@ toRawModel2D = \case
          )
          []
   Primitive2D (Text2D { textText, textSize, textFont, textDirection, textLanguage, textScript, textHAlign, textVAlign, textSpacing, textEm, textFacets })
-    -> App "text" [] [] -- TODO: implement
+      -> App "text"
+          (concat
+            [ required "text"      $ LitString textText
+            , optional "size"      $ fmap LitDouble textSize
+            , optional "font"      $ fmap LitString textFont
+            , optional "direction" $ fmap toRawDirection textDirection
+            , optional "language"  $ fmap LitString textLanguage
+            , optional "script"    $ fmap LitString textScript
+            , optional "halign"    $ fmap toRawHorizontalAlignment textHAlign
+            , optional "valign"    $ fmap toRawVerticalAlignment textVAlign
+            , optional "spacing"   $ fmap LitDouble textSpacing
+            , optional "em"        $ fmap LitDouble textEm
+            , optionals toRawFacets textFacets
+           ]
+         )
+         []
+
+  -- ** Transform2D
   Transform2D (Scale2D { scaleVector }) children
     -> App "scale"
          (concat
@@ -345,6 +365,8 @@ toRawModel2D = \case
     -> App "difference"
          []
          (map toRawModel2D children)
+
+  -- ** Projection2D
   Projection2D (RegularProjection2D { cut }) children
     -> App "projection"
          (concat
@@ -352,6 +374,26 @@ toRawModel2D = \case
            ]
          )
          (map toRawModel3D children)
+
+toRawDirection :: Direction -> Raw.Lit
+toRawDirection = \case
+  LeftToRight -> LitString "ltr"
+  RightToLeft -> LitString "rtl"
+  TopToBottom -> LitString "ttb"
+  BottomToTop -> LitString "btt"
+
+toRawHorizontalAlignment :: HorizontalAlignment -> Raw.Lit
+toRawHorizontalAlignment = \case
+  HLeft   -> LitString "left"
+  HCenter -> LitString "center"
+  HRight  -> LitString "right"
+
+toRawVerticalAlignment :: VerticalAlignment -> Raw.Lit
+toRawVerticalAlignment = \case
+  VTop      -> LitString "top"
+  VCenter   -> LitString "center"
+  VBaseline -> LitString "baseline"
+  VBottom   -> LitString "bottom"
 
 -------------------------------------------------------------------------------
 -- / ToRaw / 3D
@@ -397,6 +439,7 @@ toRawModel3D = \case
            ]
          )
          []
+
   Transform3D (Scale3D { scaleVector }) children
     -> App "scale"
          (concat
@@ -469,6 +512,7 @@ toRawModel3D = \case
     -> App "hull"
          []
          (map toRawModel3D children)
+
   Extrude3D (LinearExtrude { linearHeight, linearCenter, linearTwist, linearScale, linearSlices, linearSegments, linearConvexity }) children
     -> App "linear_extrude"
          (concat
