@@ -108,11 +108,13 @@ data Extrude3D
 data Primitive3D
   = Cube3D
       { size :: V3 Double
+      , center :: Maybe Bool
       }
   | Cylinder3D
       { h :: Double
       , d1 :: Double
       , d2 :: Double
+      , center :: Maybe Bool
       , _facets :: Maybe Facets
       }
   | Sphere3D
@@ -283,19 +285,23 @@ toRawModel2D = \case
 
 toRawModel3D :: Model3D -> Raw.Ast
 toRawModel3D = \case
-  Primitive3D (Cube3D { size })
+  Comment3D comment ast
+    -> Comment comment (toRawModel3D ast)
+  Primitive3D (Cube3D { size, center })
     -> App "cube"
          (concat
            [ required (Just "size", toRawVec3Double size)
+           , optional (\c -> (Just "center", LitBool c)) center
            ]
          )
          []
-  Primitive3D (Cylinder3D { h, d1, d2, _facets })
+  Primitive3D (Cylinder3D { h, d1, d2, center, _facets })
     -> App "cylinder"
          (concat
            [ required (Just "h", LitDouble h)
            , required (Just "d1", LitDouble d1)
            , required (Just "d2", LitDouble d2)
+           , optional (\c -> (Just "center", LitBool c)) center
            , optionals toRawFacets _facets
            ]
          )
