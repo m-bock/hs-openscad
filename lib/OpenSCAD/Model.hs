@@ -6,6 +6,8 @@ module OpenSCAD.Model
   , Primitive2D(..), Transform2D(..), Projection2D(..)
   , Primitive3D(..), Transform3D(..), Extrude3D(..)
   , Facets(..)
+  , Font(..)
+  , Direction(..), HorizontalAlignment(..), VerticalAlignment(..)
   , V3
   , V2
   , RGB
@@ -20,6 +22,7 @@ module OpenSCAD.Model
 import OpenSCAD.Raw (Ast(..), Lit(..))
 import qualified OpenSCAD.Raw as Raw
 import Data.Monoid (First(..))
+import Data.List (intercalate)
 
 -------------------------------------------------------------------------------
 -- / Types
@@ -49,17 +52,20 @@ type RGB = V3 Double
 type Comment = String
 
 data Direction = LeftToRight | RightToLeft | TopToBottom | BottomToTop
+  deriving Eq
 
 data HorizontalAlignment
-  = HLeft
-  | HCenter
-  | HRight
+  = HALeft
+  | HACenter
+  | HARight
+  deriving Eq
 
 data VerticalAlignment
-  = VTop
-  | VCenter
-  | VBaseline
-  | VBottom
+  = VATop
+  | VACenter
+  | VABaseline
+  | VABottom
+  deriving Eq
 
 -------------------------------------------------------------------------------
 -- / Types / 2D
@@ -69,7 +75,7 @@ data Model2D
   = Primitive2D  Primitive2D
   | Transform2D  Transform2D  [Model2D]
   | Projection2D Projection2D [Model3D]
-  | Comment2D Comment Model2D
+  | Comment2D    Comment      Model2D
 
 data Projection2D = RegularProjection2D { cut :: Maybe Bool }
 
@@ -90,7 +96,7 @@ data Primitive2D
   | Text2D
       { textText      :: String
       , textSize      :: Maybe Double
-      , textFont      :: Maybe String
+      , textFont      :: Maybe Font
       , textDirection :: Maybe Direction
       , textLanguage  :: Maybe String
       , textScript    :: Maybe String
@@ -100,6 +106,11 @@ data Primitive2D
       , textEm        :: Maybe Double
       , textFacets    :: Maybe Facets
       }
+
+data Font = Font {
+  fontFamily :: String,
+  fontOptions :: [(String, String)]
+}
 
 data Transform2D
   = Scale2D
@@ -158,8 +169,8 @@ data Extrude3D
       , linearTwist     :: Maybe Double
       , linearScale     :: Maybe Double
       , linearSlices    :: Maybe Int
-      , linearSegments  :: Maybe Int
       , linearConvexity :: Maybe Int
+      , linearFacets    :: Maybe Facets
       }
   | RotateExtrude
       { rotateAngle     :: Double
@@ -225,10 +236,10 @@ data Transform3D
 
 toRawModel2D :: Model2D -> Raw.Ast
 toRawModel2D = \case
-  -- ** Comment2D
+  -- ** Comment
   Comment2D comment ast -> Comment comment (toRawModel2D ast)
 
-  -- ** Primitive2D
+  -- ** Primitive
   Primitive2D (Circle2D { circleDiameter, circleFacets })
     -> App "circle"
          (concat
@@ -259,7 +270,7 @@ toRawModel2D = \case
           (concat
             [ required "text"      $ LitString textText
             , optional "size"      $ fmap LitDouble textSize
-            , optional "font"      $ fmap LitString textFont
+            , optional "font"      $ fmap toRawFont textFont
             , optional "direction" $ fmap toRawDirection textDirection
             , optional "language"  $ fmap LitString textLanguage
             , optional "script"    $ fmap LitString textScript
@@ -272,7 +283,7 @@ toRawModel2D = \case
          )
          []
 
-  -- ** Transform2D
+  -- ** Transform
   Transform2D (Scale2D { scaleVector }) children
     -> App "scale"
          (concat
@@ -366,7 +377,7 @@ toRawModel2D = \case
          []
          (map toRawModel2D children)
 
-  -- ** Projection2D
+  -- ** Projection
   Projection2D (RegularProjection2D { cut }) children
     -> App "projection"
          (concat
@@ -384,16 +395,20 @@ toRawDirection = \case
 
 toRawHorizontalAlignment :: HorizontalAlignment -> Raw.Lit
 toRawHorizontalAlignment = \case
-  HLeft   -> LitString "left"
-  HCenter -> LitString "center"
-  HRight  -> LitString "right"
+  HALeft   -> LitString "left"
+  HACenter -> LitString "center"
+  HARight  -> LitString "right"
 
 toRawVerticalAlignment :: VerticalAlignment -> Raw.Lit
 toRawVerticalAlignment = \case
-  VTop      -> LitString "top"
-  VCenter   -> LitString "center"
-  VBaseline -> LitString "baseline"
-  VBottom   -> LitString "bottom"
+  VATop      -> LitString "top"
+  VACenter   -> LitString "center"
+  VABaseline -> LitString "baseline"
+  VABottom   -> LitString "bottom"
+
+toRawFont :: Font -> Raw.Lit
+toRawFont Font { fontFamily, fontOptions } =
+  LitString $ fontFamily <> " " <> intercalate "" (map (\(k, v) -> ":" ++ k ++ "=" ++ v) fontOptions)
 
 -------------------------------------------------------------------------------
 -- / ToRaw / 3D
@@ -401,8 +416,11 @@ toRawVerticalAlignment = \case
 
 toRawModel3D :: Model3D -> Raw.Ast
 toRawModel3D = \case
+  -- ** Comment
   Comment3D comment ast
     -> Comment comment (toRawModel3D ast)
+  
+  -- ** Primitive
   Primitive3D (Cube3D { cubeSize, cubeCenter })
     -> App "cube"
          (concat
@@ -440,6 +458,7 @@ toRawModel3D = \case
          )
          []
 
+  -- ** Transform
   Transform3D (Scale3D { scaleVector }) children
     -> App "scale"
          (concat
@@ -513,6 +532,7 @@ toRawModel3D = \case
          []
          (map toRawModel3D children)
 
+  -- ** Extrude
   Extrude3D (LinearExtrude { linearHeight, linearCenter, linearTwist, linearScale, linearSlices, linearSegments, linearConvexity }) children
     -> App "linear_extrude"
          (concat
