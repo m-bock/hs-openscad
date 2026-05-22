@@ -8,6 +8,7 @@ module OpenSCAD.Model
   , Facets(..)
   , Font(..)
   , Direction(..), HorizontalAlignment(..), VerticalAlignment(..)
+  , Modifier(..)
   , V3
   , V2
   , RGB
