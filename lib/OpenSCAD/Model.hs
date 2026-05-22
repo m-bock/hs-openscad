@@ -67,6 +67,12 @@ data VerticalAlignment
   | VABottom
   deriving Eq
 
+data Modifier
+  = ModDisable
+  | ModShowOnly
+  | ModHighlight
+  | ModTransparent
+
 -------------------------------------------------------------------------------
 -- / Types / 2D
 -------------------------------------------------------------------------------
@@ -76,6 +82,7 @@ data Model2D
   | Transform2D  Transform2D  [Model2D]
   | Projection2D Projection2D [Model3D]
   | Comment2D    Comment      Model2D
+  | Modifier2D   Modifier     Model2D
 
 data Projection2D = RegularProjection2D { cut :: Maybe Bool }
 
@@ -134,7 +141,7 @@ data Transform2D
       { mirrorVector :: V2 Double
       }
   | Color2D
-      { colorColor :: Maybe RGB
+      { colorColor :: RGB
       , colorAlpha :: Maybe Double
       }
   | OffsetRadial2D
@@ -160,7 +167,8 @@ data Model3D
   = Primitive3D Primitive3D
   | Transform3D Transform3D [Model3D]
   | Extrude3D   Extrude3D   [Model2D]
-  | Comment3D   Comment Model3D
+  | Comment3D   Comment      Model3D
+  | Modifier3D   Modifier     Model3D
 
 data Extrude3D
   = LinearExtrude
@@ -221,7 +229,7 @@ data Transform3D
   | Mirror3D
       { mirrorVector :: V3 Double }
   | Color3D
-      { colorColor :: Maybe RGB
+      { colorColor :: RGB
       , colorAlpha :: Maybe Double
       }
   | Union3D  
@@ -236,9 +244,6 @@ data Transform3D
 
 toRawModel2D :: Model2D -> Raw.Ast
 toRawModel2D = \case
-  -- ** Comment
-  Comment2D comment ast -> Comment comment (toRawModel2D ast)
-
   -- ** Primitive
   Primitive2D (Circle2D { circleDiameter, circleFacets })
     -> App "circle"
@@ -331,7 +336,7 @@ toRawModel2D = \case
   Transform2D (Color2D { colorColor, colorAlpha }) children
     -> App "color"
          (concat
-           [ optional "c"     $ fmap toRawVec3Double colorColor
+           [ required "c"     $ toRawVec3Double colorColor
            , optional "alpha" $ fmap LitDouble colorAlpha
            ]
          )
@@ -385,6 +390,12 @@ toRawModel2D = \case
            ]
          )
          (map toRawModel3D children)
+ 
+  -- ** Comment
+  Comment2D comment ast -> Comment comment (toRawModel2D ast)
+
+  -- ** Modifier
+  Modifier2D modifier ast -> Modifier (modifierToChar modifier) (toRawModel2D ast)
 
 toRawDirection :: Direction -> Raw.Lit
 toRawDirection = \case
@@ -416,10 +427,6 @@ toRawFont Font { fontFamily, fontOptions } =
 
 toRawModel3D :: Model3D -> Raw.Ast
 toRawModel3D = \case
-  -- ** Comment
-  Comment3D comment ast
-    -> Comment comment (toRawModel3D ast)
-  
   -- ** Primitive
   Primitive3D (Cube3D { cubeSize, cubeCenter })
     -> App "cube"
@@ -506,7 +513,7 @@ toRawModel3D = \case
   Transform3D (Color3D { colorColor, colorAlpha }) children
     -> App "color"
          (concat
-           [ optional "c" $ fmap toRawVec3Double colorColor
+           [ required "c" $ toRawVec3Double colorColor
            , optional "alpha" $ fmap LitDouble colorAlpha
            ]
          )
@@ -533,7 +540,7 @@ toRawModel3D = \case
          (map toRawModel3D children)
 
   -- ** Extrude
-  Extrude3D (LinearExtrude { linearHeight, linearCenter, linearTwist, linearScale, linearSlices, linearSegments, linearConvexity }) children
+  Extrude3D (LinearExtrude { linearHeight, linearCenter, linearTwist, linearScale, linearSlices, linearConvexity }) children
     -> App "linear_extrude"
          (concat
            [ required "height"    $ LitDouble linearHeight
@@ -541,7 +548,6 @@ toRawModel3D = \case
            , optional "twist"     $ fmap LitDouble linearTwist
            , optional "scale"     $ fmap LitDouble linearScale
            , optional "slices"    $ fmap LitInt linearSlices
-           , optional "segments"  $ fmap LitInt linearSegments
            , optional "convexity" $ fmap LitInt linearConvexity
            ]
          )
@@ -556,6 +562,14 @@ toRawModel3D = \case
            ]
          )
          (map toRawModel2D children)
+
+  -- ** Comment
+  Comment3D comment ast
+    -> Comment comment (toRawModel3D ast)
+
+  -- ** Modifier
+  Modifier3D modifier ast
+    -> Modifier (modifierToChar modifier) (toRawModel3D ast)
 
 toRawFacets :: Facets -> [ (Maybe String, Raw.Lit) ]
 toRawFacets Facets { fa, fs, fn } =
@@ -583,6 +597,13 @@ optional :: String -> Maybe a -> [(Maybe String, a)]
 optional name x = case x of
   Just x -> [(Just name, x)]
   Nothing -> []
+
+modifierToChar :: Modifier -> Char
+modifierToChar = \case
+  ModDisable -> '*'
+  ModShowOnly -> '!'
+  ModHighlight -> '#'
+  ModTransparent -> '%'
 
 -------------------------------------------------------------------------------
 -- / Render

@@ -10,8 +10,11 @@ import Data.List (intercalate)
 
 type Comment = String
 
+type Modifier = Char
+
 data Ast
   = App String [(Maybe String, Lit)] [Ast]
+  | Modifier Modifier Ast
   | Comment Comment Ast
 
 data Lit
@@ -32,6 +35,8 @@ renderAt :: Int -> Ast -> String
 renderAt depth ast = case ast of
   (App name args children) ->
     indent depth ++ name ++ renderArgs args ++ renderChildrenAt depth children
+  (Modifier modifier ast) ->
+    indent depth ++ [modifier] ++ renderAt depth ast
   (Comment comment ast) ->
     indent depth ++ "// " ++ comment ++ renderAt depth ast
 
