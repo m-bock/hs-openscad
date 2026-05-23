@@ -308,7 +308,7 @@ toRawModel2D = \case
   Transform2D (RotateEuler2D { rotateEulerVector }) children
     -> App "rotate"
          (concat
-           [ required "v" $ toRawVec2Double rotateEulerVector
+           [ required "a" $ toRawVec2Double rotateEulerVector
            ]
          )
          (map toRawModel2D children)
@@ -485,7 +485,7 @@ toRawModel3D = \case
   Transform3D (RotateEuler3D { rotateEulerVector }) children
     -> App "rotate"
          (concat
-           [ required "v" $ toRawVec3Double rotateEulerVector
+           [ required "a" $ toRawVec3Double rotateEulerVector
            ]
          )
          (map toRawModel3D children)
