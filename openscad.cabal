@@ -25,6 +25,7 @@ library
   import: warnings, extensions
   exposed-modules: OpenSCAD.Model
   other-modules:
+    OpenSCAD.Optimizer
     OpenSCAD.Raw
 
   hs-source-dirs: lib

@@ -81,6 +81,7 @@ data Modifier
 data Model2D
   = Primitive2D  Primitive2D
   | Transform2D  Transform2D  [Model2D]
+  | BoolOp2D     BoolOp2D     [Model2D]
   | Projection2D Projection2D [Model3D]
   | Comment2D    Comment      Model2D
   | Modifier2D   Modifier     Model2D
@@ -156,7 +157,9 @@ data Transform2D
   | Fill2D
   | Minkowski2D
   | Hull2D
-  | Union2D
+
+data BoolOp2D
+  = Union2D
   | Intersection2D
   | Difference2D
 
@@ -167,9 +170,10 @@ data Transform2D
 data Model3D
   = Primitive3D Primitive3D
   | Transform3D Transform3D [Model3D]
+  | BoolOp3D    BoolOp3D    [Model3D]
   | Extrude3D   Extrude3D   [Model2D]
   | Comment3D   Comment      Model3D
-  | Modifier3D   Modifier     Model3D
+  | Modifier3D  Modifier     Model3D
 
 data Extrude3D
   = LinearExtrude
@@ -232,12 +236,14 @@ data Transform3D
       { colorColor :: RGB
       , colorAlpha :: Maybe Double
       }
-  | Union3D  
-  | Intersection3D 
-  | Difference3D
   | Minkowski3D
   | Hull3D
-  
+
+data BoolOp3D
+  = Union3D  
+  | Intersection3D 
+  | Difference3D
+
 -------------------------------------------------------------------------------
 -- / ToRaw / 2D
 -------------------------------------------------------------------------------
@@ -369,15 +375,17 @@ toRawModel2D = \case
     -> App "hull"
          []
          (map toRawModel2D children)
-  Transform2D (Union2D) children
+
+  -- ** BoolOp
+  BoolOp2D (Union2D) children
     -> App "union"
          []
          (map toRawModel2D children)
-  Transform2D (Intersection2D) children
+  BoolOp2D (Intersection2D) children
     -> App "intersection"
          []
          (map toRawModel2D children)
-  Transform2D (Difference2D) children
+  BoolOp2D (Difference2D) children
     -> App "difference"
          []
          (map toRawModel2D children)
@@ -518,18 +526,6 @@ toRawModel3D = \case
            ]
          )
          (map toRawModel3D children)
-  Transform3D (Union3D) children
-    -> App "union"
-         []
-         (map toRawModel3D children)
-  Transform3D (Intersection3D) children
-    -> App "intersection"
-         []
-         (map toRawModel3D children)
-  Transform3D (Difference3D) children
-    -> App "difference"
-         []
-         (map toRawModel3D children)
   Transform3D (Minkowski3D) children
     -> App "minkowski"
          []
@@ -539,6 +535,20 @@ toRawModel3D = \case
          []
          (map toRawModel3D children)
 
+  -- ** BoolOp
+  BoolOp3D (Union3D) children
+    -> App "union"
+         []
+         (map toRawModel3D children)
+  BoolOp3D (Intersection3D) children
+    -> App "intersection"
+         []
+         (map toRawModel3D children)
+  BoolOp3D (Difference3D) children
+    -> App "difference"
+         []
+         (map toRawModel3D children)
+  
   -- ** Extrude
   Extrude3D (LinearExtrude { linearHeight, linearCenter, linearTwist, linearScale, linearSlices, linearConvexity }) children
     -> App "linear_extrude"
