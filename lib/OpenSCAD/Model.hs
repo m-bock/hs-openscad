@@ -183,7 +183,6 @@ data Extrude3D
       }
   | RotateExtrude
       { rotateAngle     :: Double
-      , rotateStart     :: Double
       , rotateConvexity :: Maybe Int
       , rotateFacets    :: Maybe Facets
       }
@@ -553,11 +552,10 @@ toRawModel3D = \case
            ]
          )
          (map toRawModel2D children)
-  Extrude3D (RotateExtrude { rotateAngle, rotateStart, rotateConvexity, rotateFacets }) children
+  Extrude3D (RotateExtrude { rotateAngle, rotateConvexity, rotateFacets }) children
     -> App "rotate_extrude"
          (concat
            [ required "angle"     $ LitDouble rotateAngle
-           , required "start"     $ LitDouble rotateStart
            , optional "convexity" $ fmap LitInt rotateConvexity
            , optionals toRawFacets rotateFacets
            ]
