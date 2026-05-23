@@ -3,8 +3,8 @@
 module OpenSCAD.Model
   ( Model3D(..)
   , Model2D(..)
-  , Primitive2D(..), Transform2D(..), Projection2D(..)
-  , Primitive3D(..), Transform3D(..), Extrude3D(..)
+  , Primitive2D(..), Transform2D(..), Projection2D(..), BoolOp2D(..)
+  , Primitive3D(..), Transform3D(..), Extrude3D(..), BoolOp3D(..)
   , Facets(..)
   , Font(..)
   , Direction(..), HorizontalAlignment(..), VerticalAlignment(..)
@@ -12,8 +12,8 @@ module OpenSCAD.Model
   , V3
   , V2
   , RGB
-  , render3D
-  , render2D
+  , toRawModel2D
+  , toRawModel3D
   ) where
 
 -------------------------------------------------------------------------------
@@ -613,13 +613,3 @@ modifierToChar = \case
   ModShowOnly -> '!'
   ModHighlight -> '#'
   ModTransparent -> '%'
-
--------------------------------------------------------------------------------
--- / Render
--------------------------------------------------------------------------------
-
-render3D :: Model3D -> String
-render3D = Raw.render . toRawModel3D
-
-render2D :: Model2D -> String
-render2D = Raw.render . toRawModel2D
