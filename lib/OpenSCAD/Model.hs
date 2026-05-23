@@ -129,11 +129,11 @@ data Transform2D
       , resizeAuto :: Maybe (V2 Bool)
       }
   | RotateEuler2D
-      { rotateEulerVector :: V2 Double
+      { rotateEulerVector :: V3 Double -- sic!
       }
   | RotateAxis2D
       { rotateAxisAngle :: Double
-      , rotateAxisVector :: Maybe (V2 Double)
+      , rotateAxisVector :: Maybe (V3 Double) -- sic!
       }
   | Translate2D
       { translateVector :: V3 Double -- sic! 2d shapes can be translated in 3d space
@@ -307,7 +307,7 @@ toRawModel2D = \case
   Transform2D (RotateEuler2D { rotateEulerVector }) children
     -> App "rotate"
          (concat
-           [ required "a" $ toRawVec2Double rotateEulerVector
+           [ required "a" $ toRawVec3Double rotateEulerVector
            ]
          )
          (map toRawModel2D children)
@@ -315,7 +315,7 @@ toRawModel2D = \case
     -> App "rotate"
          (concat
            [ required "a" $ LitDouble rotateAxisAngle
-           , optional "v" $ fmap toRawVec2Double rotateAxisVector
+           , optional "v" $ fmap toRawVec3Double rotateAxisVector
            ]
          )
          (map toRawModel2D children)
