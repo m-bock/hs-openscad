@@ -86,6 +86,12 @@ data Model2D
   | Comment2D    Comment      Model2D
   | Modifier2D   Modifier     Model2D
 
+instance Semigroup Model2D where
+  m1 <> m2 = BoolOp2D Union2D [m1, m2]
+
+instance Monoid Model2D where
+  mempty = BoolOp2D Union2D []
+
 data Projection2D = RegularProjection2D { cut :: Maybe Bool }
 
 data Primitive2D
@@ -174,6 +180,12 @@ data Model3D
   | Extrude3D   Extrude3D   [Model2D]
   | Comment3D   Comment      Model3D
   | Modifier3D  Modifier     Model3D
+
+instance Semigroup Model3D where
+  m1 <> m2 = BoolOp3D Union3D [m1, m2]
+
+instance Monoid Model3D where
+  mempty = BoolOp3D Union3D []
 
 data Extrude3D
   = LinearExtrude
